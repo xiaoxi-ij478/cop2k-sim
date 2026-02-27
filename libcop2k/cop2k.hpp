@@ -4,6 +4,7 @@
 #include <array>
 #include <bitset>
 #include <cstdint>
+#include <functional>
 #include <stdexcept>
 #include <string>
 #include <tuple>
@@ -11,16 +12,220 @@
 
 namespace COP2K
 {
-    class BusConflict : std::logic_error
+    class BusConflict : public std::logic_error
     {
         public:
             BusConflict() : std::logic_error("this bus already has a writer") {}
     };
 
-    class BusNoWriter : std::logic_error
+    class BusNoWriter : public std::logic_error
     {
         public:
             BusNoWriter() : std::logic_error("this bus has no writer") {}
+    };
+
+    class Register
+    {
+        public:
+            constexpr uint8_t get() const
+            {
+                return data;
+            }
+
+            constexpr void set(uint8_t val)
+            {
+                data = val;
+            }
+
+        private:
+            uint8_t data;
+    };
+
+    class RegisterWithCallback
+    {
+        public:
+            RegisterWithCallback() : data(), callback([](RegisterWithCallback &) {}) {}
+
+            constexpr uint8_t get() const
+            {
+                return data;
+            }
+
+            void set(uint8_t val)
+            {
+                data = val;
+                callback(*this);
+            }
+
+            void set_callback(const std::function<void(RegisterWithCallback &)> &func)
+            {
+                callback = func;
+            }
+
+            void set_callback(std::function<void(RegisterWithCallback &)> &&func)
+            {
+                callback = func;
+            }
+
+            void clear_callback()
+            {
+                callback = [](RegisterWithCallback &) {};
+            }
+
+        private:
+            uint8_t data;
+            std::function<void(RegisterWithCallback &)> callback;
+    };
+
+    class Flag
+    {
+        public:
+            constexpr bool get() const
+            {
+                return data;
+            }
+
+            constexpr void set()
+            {
+                data = true;
+            }
+
+            constexpr void clear()
+            {
+                data = false;
+            }
+
+            constexpr void set(bool val)
+            {
+                data = val;
+            }
+
+        private:
+            bool data : 1;
+    };
+
+    class FlagWithCallback
+    {
+        public:
+            FlagWithCallback() : data(), callback([](FlagWithCallback &) {}) {}
+
+            constexpr bool get() const
+            {
+                return data;
+            }
+
+            void set()
+            {
+                data = true;
+                callback(*this);
+            }
+
+            void clear()
+            {
+                data = false;
+                callback(*this);
+            }
+
+            void set(bool val)
+            {
+                data = val;
+                callback(*this);
+            }
+
+            void set_callback(const std::function<void(FlagWithCallback &)> &func)
+            {
+                callback = func;
+            }
+
+            void set_callback(std::function<void(FlagWithCallback &)> &&func)
+            {
+                callback = func;
+            }
+
+            void clear_callback()
+            {
+                callback = [](FlagWithCallback &) {};
+            }
+
+        private:
+            bool data : 1;
+            std::function<void(FlagWithCallback &)> callback;
+
+    };
+
+    class NegFlag
+    {
+        public:
+            constexpr bool get() const
+            {
+                return data;
+            }
+
+            constexpr void set()
+            {
+                data = false;
+            }
+
+            constexpr void clear()
+            {
+                data = true;
+            }
+
+            constexpr void set(bool val)
+            {
+                data = val;
+            }
+
+        private:
+            bool data : 1;
+    };
+
+    class NegFlagWithCallback
+    {
+        public:
+            NegFlagWithCallback() : data(), callback([](NegFlagWithCallback &) {}) {}
+
+            constexpr bool get() const
+            {
+                return data;
+            }
+
+            void set()
+            {
+                data = false;
+                callback(*this);
+            }
+
+            void clear()
+            {
+                data = true;
+                callback(*this);
+            }
+
+            void set(bool val)
+            {
+                data = val;
+                callback(*this);
+            }
+
+            void set_callback(const std::function<void(NegFlagWithCallback &)> &func)
+            {
+                callback = func;
+            }
+
+            void set_callback(std::function<void(NegFlagWithCallback &)> &&func)
+            {
+                callback = func;
+            }
+
+            void clear_callback()
+            {
+                callback = [](NegFlagWithCallback &) {};
+            }
+
+        private:
+            bool data : 1;
+            std::function<void(NegFlagWithCallback &)> callback;
     };
 
     class ALU
@@ -28,7 +233,7 @@ namespace COP2K
         public:
             // DO NOT MODIFY
             // THIS IS DEFINED BY THE MACHINE
-            enum class CalcTypes : unsigned {
+            enum class CalcTypes : uint8_t {
                 ADD,
                 SUB,
                 AND,
@@ -39,38 +244,15 @@ namespace COP2K
                 DIRECT_A
             };
 
-            constexpr void set_calc_type(CalcTypes new_type)
+            constexpr void set_calc_type(CalcTypes val)
             {
-                calc_type = new_type;
+                calc_type = val;
             }
 
-#define READ_WRITE_FLAG(flag) \
-    constexpr bool get_##flag() const \
-    { \
-        return _##flag; \
-    } \
-    \
-    constexpr void set_##flag() \
-    { \
-        _##flag = true; \
-    } \
-    \
-    constexpr void clear_##flag() \
-    { \
-        _##flag = false; \
-    } \
-    \
-    constexpr void set_##flag(bool val) \
-    { \
-        _##flag = val; \
-    }
-
-            READ_WRITE_FLAG(fen)
-            READ_WRITE_FLAG(cn)
-            READ_WRITE_FLAG(cy)
-            READ_WRITE_FLAG(z)
-
-#undef READ_WRITE_FLAG
+            constexpr CalcTypes get_calc_type() const
+            {
+                return calc_type;
+            }
 
             // left, direct, right
             constexpr std::tuple<uint8_t, uint8_t, uint8_t> calc(uint8_t A, uint8_t W)
@@ -95,11 +277,11 @@ namespace COP2K
                         break;
 
                     case CalcTypes::CARRY_ADD:
-                        result = A + W + get_cy();
+                        result = A + W + cy.get();
                         break;
 
                     case CalcTypes::CARRY_SUB:
-                        result = A - W - get_cy();
+                        result = A - W - cy.get();
                         break;
 
                     case CalcTypes::NOT:
@@ -111,24 +293,24 @@ namespace COP2K
                         break;
                 }
 
-                if (get_fen()) {
-                    set_cy(result < -128 || result > 127);
-                    set_z(!result);
+                if (fen.get()) {
+                    cy.set(result < -128 || result > 127);
+                    z.set(!result);
                 }
 
                 return std::make_tuple<uint8_t, uint8_t, uint8_t>(
-                           (result << 1) | (get_cy() & get_cn()),
+                           (result << 1) | (cy.get() & cn.get()),
                            result,
-                           (result >> 1) | ((get_cy() & get_cn()) << 7)
+                           (result >> 1) | ((cy.get() & cn.get()) << 7)
                        );
             }
 
+            Flag cy;
+            Flag z;
+            Flag fen;
+            Flag cn;
         private:
             CalcTypes calc_type : 3;
-            bool _cy : 1;
-            bool _z : 1;
-            bool _fen : 1;
-            bool _cn : 1;
     };
 
     // ReaderType means "read from bus"
@@ -274,6 +456,17 @@ namespace COP2K
                 return mem.at(addr);
             }
 
+            // bypass normal addr lookup mode
+            constexpr void set_data_at(uint8_t actaddr, uint8_t val)
+            {
+                mem.at(actaddr) = val;
+            }
+
+            constexpr uint8_t get_data_at(uint8_t actaddr) const
+            {
+                return mem.at(actaddr);
+            }
+
         private:
             std::array<uint8_t, 256> mem;
             uint8_t addr;
@@ -302,6 +495,17 @@ namespace COP2K
                 return mem.at(addr);
             }
 
+            // bypass normal addr lookup mode
+            constexpr void set_data_at(uint8_t actaddr, const std::bitset<24> &val)
+            {
+                mem.at(actaddr) = val;
+            }
+
+            constexpr const std::bitset<24> &get_data_at(uint8_t actaddr) const
+            {
+                return mem.at(actaddr);
+            }
+
         private:
             std::array<std::bitset<24>, 256> mem;
             uint8_t addr;
@@ -312,51 +516,67 @@ namespace COP2K
         public:
             constexpr COP2K()
             {
-                set_manual_dbus_input(0);
-                set_upc(0);
-                set_pc(0);
-                set_mar(0);
-                set_ia(0xE0);
-                set_st(0);
-                set_in(0);
-                set_out(0);
-                set_ir(0);
-                set_r0(0);
-                set_r1(0);
-                set_r2(0);
-                set_r3(0);
-                set_emwr();
-                set_emrd();
-                set_pcoe();
-                set_emen();
-                set_iren();
-                set_eint();
-                set_elp();
-                set_maren();
-                set_maroe();
-                set_outen();
-                set_sten();
-                set_rrd();
-                set_rwr();
-                set_x2();
-                set_x1();
-                set_x0();
-                set_wen();
-                set_aen();
-                set_s2();
-                set_s1();
-                set_s0();
-                clear_sa();
-                clear_sb();
-                clear_ireq();
-                clear_iack();
-                set_running_manually();
-                set_halt();
+                using namespace std::placeholders;
+                a.set_callback([this](RegisterWithCallback &) {
+                    update_alu();
+                });
+                w.set_callback([this](RegisterWithCallback &) {
+                    update_alu();
+                });
+                s0.set_callback([this](NegFlagWithCallback &) {
+                    update_alu();
+                });
+                s1.set_callback([this](NegFlagWithCallback &) {
+                    update_alu();
+                });
+                s2.set_callback([this](NegFlagWithCallback &) {
+                    update_alu();
+                });
+                manual_dbus_input.set(0);
+                upc.set(0);
+                pc.set(0);
+                mar.set(0);
+                ia.set(0xE0);
+                st.set(0);
+                in.set(0);
+                out.set(0);
+                ir.set(0);
+                r0.set(0);
+                r1.set(0);
+                r2.set(0);
+                r3.set(0);
+                emwr.clear();
+                emrd.clear();
+                pcoe.clear();
+                emen.clear();
+                iren.clear();
+                eint.clear();
+                elp.clear();
+                maren.clear();
+                maroe.clear();
+                outen.clear();
+                sten.clear();
+                rrd.clear();
+                rwr.clear();
+                x2.clear();
+                x1.clear();
+                x0.clear();
+                wen.clear();
+                aen.clear();
+                s2.clear();
+                s1.clear();
+                s0.clear();
+                sa.clear();
+                sb.clear();
+                ireq.clear();
+                iack.clear();
+                running_manually.set();
+                halt.set();
             }
 
             constexpr void run_forever()
             {
-                while (!get_halt())
+                while (!halt.get())
                     run_clock();
             }
 
@@ -369,265 +589,107 @@ namespace COP2K
 
             constexpr void trigger_interrupt()
             {
-                set_ireq();
+                ireq.set();
             }
 
-            constexpr void set_dbus_manual_input()
+            constexpr void set_dbus_manual_input(uint8_t val)
             {
-                dbus.set
+                manual_dbus_input.set(val);
             }
 
-            // only useful when running automatically
-            constexpr void halt()
-            {
-                set_halt();
-            }
+            Memory em;
+            Register l, d, r;
+            Register r0, r1, r2, r3;
+            MicroProgramMemory um;
 
-            constexpr void resume()
-            {
-                clear_halt();
-            }
+            // valid when TRUE
+            Flag manual_dbus;
+            Flag sa;
+            Flag sb;
+            Flag ireq;
+            Flag iack;
+            Flag running_manually;
+            Flag halt;
 
-#define READ_WRITE_REGISTER(register) \
-    constexpr uint8_t get_##register() const \
-    { \
-        return _##register; \
-    } \
-    \
-    constexpr void set_##register(uint8_t val) \
-    { \
-        _##register = val; \
-    }
+            Register manual_dbus_input;
+            Register upc;
+            Register pc;
+            Register mar;
+            Register ia;
+            Register st;
+            Register in;
+            Register out;
+            Register ir;
 
-#define READ_WRITE_FLAG_FALSE_VALID(flag) \
-    constexpr bool get_##flag() const \
-    { \
-        return _##flag; \
-    } \
-    \
-    constexpr void set_##flag() \
-    { \
-        _##flag = false; \
-    } \
-    \
-    constexpr void clear_##flag() \
-    { \
-        _##flag = true; \
-    } \
-    \
-    constexpr void set_##flag(bool val) \
-    { \
-        _##flag = val; \
-    }
+            RegisterWithCallback a, w;
 
-#define READ_WRITE_FLAG_TRUE_VALID(flag) \
-    constexpr bool get_##flag() const \
-    { \
-        return _##flag; \
-    } \
-    \
-    constexpr void set_##flag() \
-    { \
-        _##flag = true; \
-    } \
-    \
-    constexpr void clear_##flag() \
-    { \
-        _##flag = false; \
-    } \
-    \
-    constexpr void set_##flag(bool val) \
-    { \
-        _##flag = val; \
-    }
+            // valid when FALSE
+            // errr... don't know its usage
+            // NegFlag xrd;
+            NegFlag emwr;
+            NegFlag emrd;
+            NegFlag pcoe;
+            NegFlag emen;
+            NegFlag iren;
+            NegFlag eint;
+            NegFlag elp;
+            NegFlag maren;
+            NegFlag maroe;
+            NegFlag outen;
+            NegFlag sten;
+            NegFlag rrd;
+            NegFlag rwr;
+            // set in ALU
+            // NegFlag cn;
+            // NegFlag fen;
+            NegFlag x2, x1, x0;
+            NegFlag wen, aen;
+            NegFlagWithCallback s2, s1, s0;
 
-            READ_WRITE_REGISTER(manual_dbus_input)
-            READ_WRITE_REGISTER(upc)
-            READ_WRITE_REGISTER(pc)
-            READ_WRITE_REGISTER(mar)
-            READ_WRITE_REGISTER(ia)
-            READ_WRITE_REGISTER(st)
-            READ_WRITE_REGISTER(in)
-            READ_WRITE_REGISTER(out)
-            READ_WRITE_REGISTER(ir)
-            READ_WRITE_REGISTER(r0)
-            READ_WRITE_REGISTER(r1)
-            READ_WRITE_REGISTER(r2)
-            READ_WRITE_REGISTER(r3)
-            READ_WRITE_FLAG_FALSE_VALID(emwr)
-            READ_WRITE_FLAG_FALSE_VALID(emrd)
-            READ_WRITE_FLAG_FALSE_VALID(pcoe)
-            READ_WRITE_FLAG_FALSE_VALID(emen)
-            READ_WRITE_FLAG_FALSE_VALID(iren)
-            READ_WRITE_FLAG_FALSE_VALID(eint)
-            READ_WRITE_FLAG_FALSE_VALID(elp)
-            READ_WRITE_FLAG_FALSE_VALID(maren)
-            READ_WRITE_FLAG_FALSE_VALID(maroe)
-            READ_WRITE_FLAG_FALSE_VALID(outen)
-            READ_WRITE_FLAG_FALSE_VALID(sten)
-            READ_WRITE_FLAG_FALSE_VALID(rrd)
-            READ_WRITE_FLAG_FALSE_VALID(rwr)
-            READ_WRITE_FLAG_FALSE_VALID(x2)
-            READ_WRITE_FLAG_FALSE_VALID(x1)
-            READ_WRITE_FLAG_FALSE_VALID(x0)
-            READ_WRITE_FLAG_FALSE_VALID(wen)
-            READ_WRITE_FLAG_FALSE_VALID(aen)
-            READ_WRITE_FLAG_TRUE_VALID(manual_dbus)
-            READ_WRITE_FLAG_TRUE_VALID(sa)
-            READ_WRITE_FLAG_TRUE_VALID(sb)
-            READ_WRITE_FLAG_TRUE_VALID(ireq)
-            READ_WRITE_FLAG_TRUE_VALID(iack)
-            READ_WRITE_FLAG_TRUE_VALID(running_manually)
-            READ_WRITE_FLAG_TRUE_VALID(halt)
-
-            // these need to be treated specially
-            constexpr bool get_s0() const
-            {
-                return _s0;
-            }
-
-            constexpr bool get_s1() const
-            {
-                return _s1;
-            }
-
-            constexpr bool get_s2() const
-            {
-                return _s2;
-            }
-
-            constexpr void set_s0()
-            {
-                _s0 = true;
-                update_alu();
-            }
-
-            constexpr void set_s1()
-            {
-                _s1 = true;
-                update_alu();
-            }
-
-            constexpr void set_s2()
-            {
-                _s2 = true;
-                update_alu();
-            }
-
-            constexpr void clear_s0()
-            {
-                _s0 = false;
-                update_alu();
-            }
-
-            constexpr void clear_s1()
-            {
-                _s1 = false;
-                update_alu();
-            }
-
-            constexpr void clear_s2()
-            {
-                _s2 = false;
-                update_alu();
-            }
-
-            constexpr void set_s0(bool val)
-            {
-                _s0 = val;
-                update_alu();
-            }
-
-            constexpr void set_s1(bool val)
-            {
-                _s1 = val;
-                update_alu();
-            }
-
-            constexpr void set_s2(bool val)
-            {
-                _s2 = val;
-                update_alu();
-            }
-
-            constexpr uint8_t get_l() const
-            {
-                return _l;
-            }
-
-            constexpr uint8_t get_d() const
-            {
-                return _d;
-            }
-
-            constexpr uint8_t get_r() const
-            {
-                return _r;
-            }
-
-            constexpr uint8_t get_a() const
-            {
-                return _a;
-            }
-
-            constexpr void set_a(uint8_t val)
-            {
-                _a = val;
-                update_alu();
-            }
-
-            constexpr uint8_t get_w() const
-            {
-                return _w;
-            }
-
-            constexpr void set_w(uint8_t val)
-            {
-                _w = val;
-                update_alu();
-            }
-
-#undef READ_WRITE_FLAG
-#undef READ_WRITE_FLAG_TRUE_VALID
-#undef READ_WRITE_FLAG_FALSE_VALID
 
         private:
             constexpr void update_alu()
             {
-                alu.set_calc_type(s2 << 2 | s1 << 1 | s0);
-                std::tie(_l, _d, _r) = alu.calc(_a, _w);
+                alu.set_calc_type(
+                    static_cast<ALU::CalcTypes>(s2.get() << 2 | s1.get() << 1 | s0.get())
+                );
+                uint8_t _l, _d, _r;
+                std::tie(_l, _d, _r) = alu.calc(a.get(), w.get());
+                l.set(_l);
+                d.set(_d);
+                r.set(_r);
             }
 
             constexpr void get_control_signal()
             {
                 // get control signal if running automatically
-                if (get_running_manually())
+                if (running_manually.get())
                     return;
 
                 const std::bitset<24> &microprogram = um.get_data();
-                set_s0(microprogram.test(0));
-                set_s1(microprogram.test(1));
-                set_s2(microprogram.test(2));
-                set_aen(microprogram.test(3));
-                set_wen(microprogram.test(4));
-                set_x0(microprogram.test(5));
-                set_x1(microprogram.test(6));
-                set_x2(microprogram.test(7));
-                alu.set_fen(microprogram.test(8));
-                alu.set_cn(microprogram.test(9));
-                set_rwr(microprogram.test(10));
-                set_rrd(microprogram.test(11));
-                set_sten(microprogram.test(12));
-                set_outen(microprogram.test(13));
-                set_maroe(microprogram.test(14));
-                set_maren(microprogram.test(15));
-                set_elp(microprogram.test(16));
-                set_eint(microprogram.test(17));
-                set_iren(microprogram.test(18));
-                set_emen(microprogram.test(19));
-                set_pcoe(microprogram.test(20));
-                set_emrd(microprogram.test(21));
-                set_emwr(microprogram.test(22));
+                s0.set(microprogram.test(0));
+                s1.set(microprogram.test(1));
+                s2.set(microprogram.test(2));
+                aen.set(microprogram.test(3));
+                wen.set(microprogram.test(4));
+                x0.set(microprogram.test(5));
+                x1.set(microprogram.test(6));
+                x2.set(microprogram.test(7));
+                alu.fen.set(microprogram.test(8));
+                alu.cn.set(microprogram.test(9));
+                rwr.set(microprogram.test(10));
+                rrd.set(microprogram.test(11));
+                sten.set(microprogram.test(12));
+                outen.set(microprogram.test(13));
+                maroe.set(microprogram.test(14));
+                maren.set(microprogram.test(15));
+                elp.set(microprogram.test(16));
+                eint.set(microprogram.test(17));
+                iren.set(microprogram.test(18));
+                emen.set(microprogram.test(19));
+                pcoe.set(microprogram.test(20));
+                emrd.set(microprogram.test(21));
+                emwr.set(microprogram.test(22));
             }
 
             constexpr void set_bus_status()
@@ -640,64 +702,64 @@ namespace COP2K
                 abus.clear_writer();
 
                 // if somebody is interrupting reply to them
-                if (get_ireq() && !get_iack()) {
+                if (ireq.get() && !iack.get()) {
                     ibus.set_writer(IBusWriterType::INTERRUPT);
-                    clear_emrd();
-                    set_iack();
+                    emrd.clear();
+                    iack.set();
                 }
 
-                if (!get_emrd())
+                if (!emrd.get())
                     ibus.set_writer(IBusWriterType::EM);
 
-                if (!get_pcoe())
+                if (!pcoe.get())
                     abus.set_writer(ABusWriterType::PC);
 
-                if (!get_emen()) {
-                    if (!get_emwr())
+                if (!emen.get()) {
+                    if (!emwr.get())
                         dbus.add_reader(DBusReaderType::EM);
 
-                    if (!get_emrd())
+                    if (!emrd.get())
                         dbus.set_writer(DBusWriterType::EM);
                 }
 
-                if (!get_iren()) {
+                if (!iren.get()) {
                     ibus.add_reader(IBusReaderType::IR);
                     ibus.add_reader(IBusReaderType::UPC);
                 }
 
-                if (!get_eint()) {
-                    clear_iack();
-                    clear_ireq();
+                if (!eint.get()) {
+                    iack.clear();
+                    ireq.clear();
                 }
 
-                if (!get_elp())
+                if (!elp.get())
                     dbus.add_reader(DBusReaderType::PC);
 
-                if (!get_maren())
+                if (!maren.get())
                     dbus.add_reader(DBusReaderType::MAR);
 
-                if (!get_maroe())
+                if (!maroe.get())
                     abus.set_writer(ABusWriterType::MAR);
 
-                if (!get_outen())
+                if (!outen.get())
                     dbus.add_reader(DBusReaderType::OUT);
 
-                if (!get_sten())
+                if (!sten.get())
                     dbus.add_reader(DBusReaderType::ST);
 
-                if (!get_rrd())
+                if (!rrd.get())
                     dbus.set_writer(DBusWriterType::REG);
 
-                if (!get_rwr())
+                if (!rwr.get())
                     dbus.add_reader(DBusReaderType::REG);
 
-                if (!get_wen())
+                if (!wen.get())
                     dbus.add_reader(DBusReaderType::W);
 
-                if (!get_aen())
+                if (!aen.get())
                     dbus.add_reader(DBusReaderType::A);
 
-                switch (get_x2() << 2 | get_x1() << 1 | get_x0()) {
+                switch (x2.get() << 2 | x1.get() << 1 | x0.get()) {
                     case 0:
                         dbus.set_writer(DBusWriterType::IN);
                         break;
@@ -731,7 +793,7 @@ namespace COP2K
                 }
 
                 // manual dbus will override previous writer
-                if (get_manual_dbus()) {
+                if (manual_dbus.get()) {
                     dbus.clear_writer();
                     dbus.set_writer(DBusWriterType::MANUAL);
                 }
@@ -744,13 +806,13 @@ namespace COP2K
                         break;
 
                     case ABusWriterType::MAR:
-                        abus.set_data(get_mar());
+                        abus.set_data(mar.get());
                         break;
 
                     case ABusWriterType::PC:
-                        abus.set_data(get_pc());
+                        abus.set_data(pc.get());
                         // it may be subsequently overwritten by ELP
-                        set_pc(get_pc() + 1);
+                        pc.set(pc.get() + 1);
                         break;
                 }
 
@@ -759,49 +821,49 @@ namespace COP2K
                         break;
 
                     case DBusWriterType::IN:
-                        dbus.set_data(get_in());
+                        dbus.set_data(in.get());
                         break;
 
                     case DBusWriterType::IA:
-                        dbus.set_data(get_ia());
+                        dbus.set_data(ia.get());
                         break;
 
                     case DBusWriterType::ST:
-                        dbus.set_data(get_st());
+                        dbus.set_data(st.get());
                         break;
 
                     case DBusWriterType::PC:
-                        dbus.set_data(get_pc());
+                        dbus.set_data(pc.get());
                         break;
 
                     case DBusWriterType::D:
-                        dbus.set_data(get_d());
+                        dbus.set_data(d.get());
                         break;
 
                     case DBusWriterType::L:
-                        dbus.set_data(get_l());
+                        dbus.set_data(l.get());
                         break;
 
                     case DBusWriterType::R:
-                        dbus.set_data(get_r());
+                        dbus.set_data(r.get());
                         break;
 
                     case DBusWriterType::REG:
-                        switch (get_sb() << 1 | get_sa()) {
+                        switch (sb.get() << 1 | sa.get()) {
                             case 0:
-                                dbus.set_data(get_r0());
+                                dbus.set_data(r0.get());
                                 break;
 
                             case 1:
-                                dbus.set_data(get_r1());
+                                dbus.set_data(r1.get());
                                 break;
 
                             case 2:
-                                dbus.set_data(get_r2());
+                                dbus.set_data(r2.get());
                                 break;
 
                             case 3:
-                                dbus.set_data(get_r3());
+                                dbus.set_data(r3.get());
                                 break;
                         }
 
@@ -812,7 +874,7 @@ namespace COP2K
                         break;
 
                     case DBusWriterType::MANUAL:
-                        dbus.set_data(get_manual_dbus_input());
+                        dbus.set_data(manual_dbus_input.get());
                         break;
                 }
 
@@ -845,45 +907,45 @@ namespace COP2K
                             break;
 
                         case DBusReaderType::MAR:
-                            set_mar(dbus.get_data());
+                            mar.set(dbus.get_data());
                             break;
 
                         case DBusReaderType::OUT:
-                            set_out(dbus.get_data());
+                            out.set(dbus.get_data());
                             break;
 
                         case DBusReaderType::ST:
-                            set_st(dbus.get_data());
+                            st.set(dbus.get_data());
                             break;
 
                         case DBusReaderType::PC:
-                            set_pc(dbus.get_data());
+                            pc.set(dbus.get_data());
                             break;
 
                         case DBusReaderType::A:
-                            set_a(dbus.get_data());
+                            a.set(dbus.get_data());
                             break;
 
                         case DBusReaderType::W:
-                            set_w(dbus.get_data());
+                            w.set(dbus.get_data());
                             break;
 
                         case DBusReaderType::REG:
-                            switch (get_sb() << 1 | get_sa()) {
+                            switch (sb.get() << 1 | sa.get()) {
                                 case 0:
-                                    set_r0(dbus.get_data());
+                                    r0.set(dbus.get_data());
                                     break;
 
                                 case 1:
-                                    set_r1(dbus.get_data());
+                                    r1.set(dbus.get_data());
                                     break;
 
                                 case 2:
-                                    set_r2(dbus.get_data());
+                                    r2.set(dbus.get_data());
                                     break;
 
                                 case 3:
-                                    set_r3(dbus.get_data());
+                                    r3.set(dbus.get_data());
                                     break;
                             }
 
@@ -902,77 +964,23 @@ namespace COP2K
                             break;
 
                         case IBusReaderType::IR:
-                            set_ir(ibus.get_data());
+                            ir.set(ibus.get_data());
                             break;
 
                         case IBusReaderType::UPC:
                             upc_set = true;
-                            set_upc(ibus.get_data());
+                            upc.set(ibus.get_data());
                             break;
                     }
 
                 if (!upc_set)
-                    set_upc(get_upc() + 1);
+                    upc.set(upc.get() + 1);
             }
 
-            Memory em;
-            MicroProgramMemory um;
             ALU alu;
             DBus dbus;
             ABus abus;
             IBus ibus;
-
-            uint8_t _manual_dbus_input;
-            uint8_t _upc;
-            uint8_t _pc;
-            uint8_t _mar;
-            uint8_t _ia;
-            uint8_t _st;
-            uint8_t _in;
-            uint8_t _out;
-            uint8_t _ir;
-
-            uint8_t _l, _d, _r;
-            uint8_t _a, _w;
-            uint8_t _r0, _r1, _r2, _r3;
-
-            // valid when FALSE
-            // errr... don't know its usage
-            // bool _xrd : 1;
-            bool _emwr : 1;
-            bool _emrd : 1;
-            bool _pcoe : 1;
-            bool _emen : 1;
-            bool _iren : 1;
-            bool _eint : 1;
-            bool _elp : 1;
-            bool _maren : 1;
-            bool _maroe : 1;
-            bool _outen : 1;
-            bool _sten : 1;
-            bool _rrd : 1;
-            bool _rwr : 1;
-            // set in ALU
-            // bool _cn : 1;
-            // bool _fen : 1;
-            bool _x2 : 1;
-            bool _x1 : 1;
-            bool _x0 : 1;
-            bool _wen : 1;
-            bool _aen : 1;
-            bool _s2 : 1;
-            bool _s1 : 1;
-            bool _s0 : 1;
-
-            // valid when TRUE
-            bool _manual_dbus : 1;
-            bool _sa : 1;
-            bool _sb : 1;
-            bool _ireq : 1;
-            bool _iack : 1;
-            bool _running_manually : 1;
-            bool _halt : 1;
-
     };
 
 }
