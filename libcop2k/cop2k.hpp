@@ -38,27 +38,10 @@ namespace COP2K
                 NOT,
                 DIRECT_A
             };
-            // DO NOT MODIFY
-            // THIS IS DEFINED BY THE MACHINE
-            enum class OutputType : unsigned {
-                IN,
-                IA,
-                ST,
-                PC,
-                D,
-                R,
-                L,
-                NONE
-            };
 
             constexpr void set_calc_type(CalcTypes new_type)
             {
                 calc_type = new_type;
-            }
-
-            constexpr void set_output_type(OutputType new_type)
-            {
-                output_type = new_type;
             }
 
 #define READ_WRITE_FLAG(flag) \
@@ -142,7 +125,6 @@ namespace COP2K
 
         private:
             CalcTypes calc_type : 3;
-            OutputType output_type : 3;
             bool _cy : 1;
             bool _z : 1;
             bool _fen : 1;
@@ -390,6 +372,22 @@ namespace COP2K
                 set_ireq();
             }
 
+            constexpr void set_dbus_manual_input()
+            {
+                dbus.set
+            }
+
+            // only useful when running automatically
+            constexpr void halt()
+            {
+                set_halt();
+            }
+
+            constexpr void resume()
+            {
+                clear_halt();
+            }
+
 #define READ_WRITE_REGISTER(register) \
     constexpr uint8_t get_##register() const \
     { \
@@ -474,9 +472,7 @@ namespace COP2K
             READ_WRITE_FLAG_FALSE_VALID(x0)
             READ_WRITE_FLAG_FALSE_VALID(wen)
             READ_WRITE_FLAG_FALSE_VALID(aen)
-            READ_WRITE_FLAG_FALSE_VALID(s2)
-            READ_WRITE_FLAG_FALSE_VALID(s1)
-            READ_WRITE_FLAG_FALSE_VALID(s0)
+            READ_WRITE_FLAG_TRUE_VALID(manual_dbus)
             READ_WRITE_FLAG_TRUE_VALID(sa)
             READ_WRITE_FLAG_TRUE_VALID(sb)
             READ_WRITE_FLAG_TRUE_VALID(ireq)
@@ -485,6 +481,75 @@ namespace COP2K
             READ_WRITE_FLAG_TRUE_VALID(halt)
 
             // these need to be treated specially
+            constexpr bool get_s0() const
+            {
+                return _s0;
+            }
+
+            constexpr bool get_s1() const
+            {
+                return _s1;
+            }
+
+            constexpr bool get_s2() const
+            {
+                return _s2;
+            }
+
+            constexpr void set_s0()
+            {
+                _s0 = true;
+                update_alu();
+            }
+
+            constexpr void set_s1()
+            {
+                _s1 = true;
+                update_alu();
+            }
+
+            constexpr void set_s2()
+            {
+                _s2 = true;
+                update_alu();
+            }
+
+            constexpr void clear_s0()
+            {
+                _s0 = false;
+                update_alu();
+            }
+
+            constexpr void clear_s1()
+            {
+                _s1 = false;
+                update_alu();
+            }
+
+            constexpr void clear_s2()
+            {
+                _s2 = false;
+                update_alu();
+            }
+
+            constexpr void set_s0(bool val)
+            {
+                _s0 = val;
+                update_alu();
+            }
+
+            constexpr void set_s1(bool val)
+            {
+                _s1 = val;
+                update_alu();
+            }
+
+            constexpr void set_s2(bool val)
+            {
+                _s2 = val;
+                update_alu();
+            }
+
             constexpr uint8_t get_l() const
             {
                 return _l;
@@ -508,7 +573,7 @@ namespace COP2K
             constexpr void set_a(uint8_t val)
             {
                 _a = val;
-                std::tie(_l, _d, _r) = alu.calc(_a, _w);
+                update_alu();
             }
 
             constexpr uint8_t get_w() const
@@ -519,7 +584,7 @@ namespace COP2K
             constexpr void set_w(uint8_t val)
             {
                 _w = val;
-                std::tie(_l, _d, _r) = alu.calc(_a, _w);
+                update_alu();
             }
 
 #undef READ_WRITE_FLAG
@@ -527,6 +592,12 @@ namespace COP2K
 #undef READ_WRITE_FLAG_FALSE_VALID
 
         private:
+            constexpr void update_alu()
+            {
+                alu.set_calc_type(s2 << 2 | s1 << 1 | s0);
+                std::tie(_l, _d, _r) = alu.calc(_a, _w);
+            }
+
             constexpr void get_control_signal()
             {
                 // get control signal if running automatically
@@ -625,6 +696,45 @@ namespace COP2K
 
                 if (!get_aen())
                     dbus.add_reader(DBusReaderType::A);
+
+                switch (get_x2() << 2 | get_x1() << 1 | get_x0()) {
+                    case 0:
+                        dbus.set_writer(DBusWriterType::IN);
+                        break;
+
+                    case 1:
+                        dbus.set_writer(DBusWriterType::IA);
+                        break;
+
+                    case 2:
+                        dbus.set_writer(DBusWriterType::ST);
+                        break;
+
+                    case 3:
+                        dbus.set_writer(DBusWriterType::PC);
+                        break;
+
+                    case 4:
+                        dbus.set_writer(DBusWriterType::D);
+                        break;
+
+                    case 5:
+                        dbus.set_writer(DBusWriterType::R);
+                        break;
+
+                    case 6:
+                        dbus.set_writer(DBusWriterType::L);
+                        break;
+
+                    case 7:
+                        break;
+                }
+
+                // manual dbus will override previous writer
+                if (get_manual_dbus()) {
+                    dbus.clear_writer();
+                    dbus.set_writer(DBusWriterType::MANUAL);
+                }
             }
 
             constexpr void modify_bus_data()
@@ -677,7 +787,7 @@ namespace COP2K
                         break;
 
                     case DBusWriterType::REG:
-                        switch ((get_sb() << 1) | get_sa()) {
+                        switch (get_sb() << 1 | get_sa()) {
                             case 0:
                                 dbus.set_data(get_r0());
                                 break;
@@ -759,7 +869,7 @@ namespace COP2K
                             break;
 
                         case DBusReaderType::REG:
-                            switch ((get_sb() << 1) | get_sa()) {
+                            switch (get_sb() << 1 | get_sa()) {
                                 case 0:
                                     set_r0(dbus.get_data());
                                     break;
@@ -855,6 +965,7 @@ namespace COP2K
             bool _s0 : 1;
 
             // valid when TRUE
+            bool _manual_dbus : 1;
             bool _sa : 1;
             bool _sb : 1;
             bool _ireq : 1;
