@@ -1,11 +1,8 @@
-#include <functional>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
-#include <string>
-#include <unordered_map>
-#include <stdexcept>
-#include <vector>
+#include <map>
+#include <iterator>
 
 #include "cop2k.hpp"
 
@@ -30,6 +27,11 @@ namespace COP2K
             std::vector<std::string> args;
             std::cout << "COP2K> ";
             std::getline(std::cin, line);
+
+            if (!std::cin) {
+                request_quit = true;
+                return;
+            }
 
             if (line.empty())
                 return;
@@ -82,7 +84,7 @@ namespace COP2K
         }
 
         bool request_quit;
-        const static std::unordered_map<std::string, CLICommand &> commands;
+        const static std::map<std::string, CLICommand &> commands;
         COP2K machine;
     };
 
@@ -104,21 +106,25 @@ CLI##name CLI##name::instance = CLI##name();
     {
         CLICommand *cmd_func = nullptr;
 
-        if (args.size() == 1) {
-            try {
-                cmd_func = &cli.commands.at(args.at(0));
+        if (args.empty()) {
+            for (const auto &i : cli.commands)
+                std::cout << "'" << i.first << "' usage: " << i.second.help_string() <<
+                          std::endl;
 
-            } catch (const std::out_of_range &) {
-                std::cerr << "error: command '" << args.at(0) << "' does not exist." << std::endl;
-                return;
-            }
-
-            std::cout << "'" << args.at(0) << "' usage: " << cmd_func->help_string() << std::endl;
             return;
         }
 
-        for (const auto &i : cli.commands)
-            std::cout << "'" << i.first << "' usage: " << i.second.help_string() << std::endl;
+        try {
+            cmd_func = &cli.commands.at(args.at(0));
+
+        } catch (const std::out_of_range &) {
+            std::cerr << "error: command '" << args.at(0) << "' does not exist." <<
+                      std::endl;
+            return;
+        }
+
+        std::cout << "'" << args.at(0) << "' usage: " << cmd_func->help_string() <<
+                  std::endl;
     }
     END_CLI_COMMAND(Help)
 
@@ -460,10 +466,15 @@ CLI##name CLI##name::instance = CLI##name();
 
     BEGIN_CLI_COMMAND(SetReg, 2, 2, "setreg <reg> <val>")
     {
-        unsigned val = std::stoi(args.at(1));
+        int val = std::stoi(args.at(1));
 
         if (val > 255) {
             std::cerr << "error: val > 255." << std::endl;
+            return;
+        }
+
+        if (val < 0) {
+            std::cerr << "error: val < 0." << std::endl;
             return;
         }
 
@@ -531,7 +542,7 @@ CLI##name CLI##name::instance = CLI##name();
 
     BEGIN_CLI_COMMAND(WriteMem, 2, 2, "writemem <addr> <val>")
     {
-        unsigned addr = std::stoi(args.at(0)), val = std::stoi(args.at(1));
+        int addr = std::stoi(args.at(0)), val = std::stoi(args.at(1));
 
         if (addr > 255) {
             std::cerr << "error: addr > 255." << std::endl;
@@ -543,6 +554,16 @@ CLI##name CLI##name::instance = CLI##name();
             return;
         }
 
+        if (addr < 0) {
+            std::cerr << "error: addr < 0." << std::endl;
+            return;
+        }
+
+        if (val < 0) {
+            std::cerr << "error: val < 0." << std::endl;
+            return;
+        }
+
         cli.machine.em.set_data_at(addr, val);
     }
     END_CLI_COMMAND(WriteMem)
@@ -551,10 +572,16 @@ CLI##name CLI##name::instance = CLI##name();
     {
         if (args.empty()) {
             for (unsigned i = 0; i < 16; i++) {
-                std::cout << (i << 4) << ": " << std::endl;
+                std::cout << std::noshowbase << (i << 4) << std::showbase << ": ";
 
                 for (unsigned j = 0; j < 16; j++)
-                    std::cout << static_cast<unsigned>(cli.machine.em.get_data_at(i << 4 | j)) << ' ';
+                    std::cout <<
+                              std::noshowbase << std::setw(2) << std::setfill('0') <<
+                              static_cast<unsigned>(
+                                  cli.machine.em.get_data_at(i << 4 | j)
+                              ) <<
+                              std::showbase << std::setw(0) << std::setfill(' ') <<
+                              ' ';
 
                 std::cout << std::endl;
             }
@@ -562,21 +589,218 @@ CLI##name CLI##name::instance = CLI##name();
             return;
         }
 
-        unsigned addr = std::stoi(args.at(0));
+        int addr = std::stoi(args.at(0));
+
         if (addr > 255) {
             std::cerr << "error: addr > 255." << std::endl;
             return;
         }
 
-        std::cout << addr << ": " << static_cast<unsigned>(cli.machine.em.get_data_at(addr)) << std::endl;
+        if (addr < 0) {
+            std::cerr << "error: addr < 0." << std::endl;
+            return;
+        }
+
+        std::cout <<
+                  addr << ": " <<
+                  static_cast<unsigned>(
+                      cli.machine.em.get_data_at(addr)
+                  ) <<
+                  std::endl;
     }
     END_CLI_COMMAND(ReadMem)
+
+    BEGIN_CLI_COMMAND(ReadMicroMem, 0, 1, "readmicromem [addr]")
+    {
+#define GET_BIT(addr, pos, name) \
+    (cli.machine.um.get_data_at(addr).test(pos) ? "" : "!") << #name << ' '
+
+        if (args.empty()) {
+            for (unsigned i = 0; i < 256; i++) {
+                std::cout <<
+                          i << ": " <<
+                          GET_BIT(i, 0, s0) <<
+                          GET_BIT(i, 1, s1) <<
+                          GET_BIT(i, 2, s2) <<
+                          GET_BIT(i, 3, aen) <<
+                          GET_BIT(i, 4, wen) <<
+                          GET_BIT(i, 5, x0) <<
+                          GET_BIT(i, 6, x1) <<
+                          GET_BIT(i, 7, x2) <<
+                          GET_BIT(i, 8, fen) <<
+                          GET_BIT(i, 9, cn) <<
+                          GET_BIT(i, 10, rwr) <<
+                          GET_BIT(i, 11, rrd) <<
+                          GET_BIT(i, 12, sten) <<
+                          GET_BIT(i, 13, outen) <<
+                          GET_BIT(i, 14, maroe) <<
+                          GET_BIT(i, 15, maren) <<
+                          GET_BIT(i, 16, elp) <<
+                          GET_BIT(i, 17, eint) <<
+                          GET_BIT(i, 18, iren) <<
+                          GET_BIT(i, 19, emen) <<
+                          GET_BIT(i, 20, pcoe) <<
+                          GET_BIT(i, 21, emrd) <<
+                          GET_BIT(i, 22, emwr) <<
+                          std::endl;
+            }
+
+            return;
+        }
+
+        int addr = std::stoi(args.at(0));
+
+        if (addr > 255) {
+            std::cerr << "error: addr > 255." << std::endl;
+            return;
+        }
+
+        if (addr < 0) {
+            std::cerr << "error: addr < 0." << std::endl;
+            return;
+        }
+
+        std::cout <<
+                  addr << ": " <<
+                  GET_BIT(addr, 0, s0) <<
+                  GET_BIT(addr, 1, s1) <<
+                  GET_BIT(addr, 2, s2) <<
+                  GET_BIT(addr, 3, aen) <<
+                  GET_BIT(addr, 4, wen) <<
+                  GET_BIT(addr, 5, x0) <<
+                  GET_BIT(addr, 6, x1) <<
+                  GET_BIT(addr, 7, x2) <<
+                  GET_BIT(addr, 8, fen) <<
+                  GET_BIT(addr, 9, cn) <<
+                  GET_BIT(addr, 10, rwr) <<
+                  GET_BIT(addr, 11, rrd) <<
+                  GET_BIT(addr, 12, sten) <<
+                  GET_BIT(addr, 13, outen) <<
+                  GET_BIT(addr, 14, maroe) <<
+                  GET_BIT(addr, 15, maren) <<
+                  GET_BIT(addr, 16, elp) <<
+                  GET_BIT(addr, 17, eint) <<
+                  GET_BIT(addr, 18, iren) <<
+                  GET_BIT(addr, 19, emen) <<
+                  GET_BIT(addr, 20, pcoe) <<
+                  GET_BIT(addr, 21, emrd) <<
+                  GET_BIT(addr, 22, emwr) <<
+                  std::endl;
+#undef GET_BIT
+    }
+    END_CLI_COMMAND(ReadMicroMem)
+
+    BEGIN_CLI_COMMAND(
+        WriteMicroMem,
+        2,
+        24,
+        "writemicromem <addr> <flag>...\n"
+        "  Flag format: \n"
+        "  !emrd -> negative emrd\n"
+        "  emrd -> positive emrd"
+    )
+    {
+        int addr = std::stoi(args.at(0));
+
+        if (addr > 255) {
+            std::cerr << "error: addr > 255." << std::endl;
+            return;
+        }
+
+        if (addr < 0) {
+            std::cerr << "error: addr < 0." << std::endl;
+            return;
+        }
+
+        std::bitset<24> orig = cli.machine.um.get_data_at(addr);
+
+        for (auto it = std::next(args.cbegin()); it != args.cend(); ++it) {
+#define SET_BIT(pos, name) \
+    if (*it == #name) \
+        orig.set(pos); \
+    else if (*it == "!" #name) \
+        orig.reset(pos)
+            SET_BIT(0, s0);
+            else
+                SET_BIT(1, s1);
+
+            else
+                SET_BIT(2, s2);
+
+            else
+                SET_BIT(3, aen);
+
+            else
+                SET_BIT(4, wen);
+
+            else
+                SET_BIT(5, x0);
+
+            else
+                SET_BIT(6, x1);
+
+            else
+                SET_BIT(7, x2);
+
+            else
+                SET_BIT(8, fen);
+
+            else
+                SET_BIT(9, cn);
+
+            else
+                SET_BIT(10, rwr);
+
+            else
+                SET_BIT(11, rrd);
+
+            else
+                SET_BIT(12, sten);
+
+            else
+                SET_BIT(13, outen);
+
+            else
+                SET_BIT(14, maroe);
+
+            else
+                SET_BIT(15, maren);
+
+            else
+                SET_BIT(16, elp);
+
+            else
+                SET_BIT(17, eint);
+
+            else
+                SET_BIT(18, iren);
+
+            else
+                SET_BIT(19, emen);
+
+            else
+                SET_BIT(20, pcoe);
+
+            else
+                SET_BIT(21, emrd);
+
+            else
+                SET_BIT(22, emwr);
+
+            else
+                std::cerr << "error: unknown item " << *it << '.' << std::endl;
+        }
+
+#undef SET_BIT
+        cli.machine.um.set_data_at(addr, orig);
+    }
+    END_CLI_COMMAND(WriteMicroMem)
 
 #undef BEGIN_CLI_COMMAND
 #undef END_CLI_COMMAND
 
 #define COMMAND(cmd_str, name) { #cmd_str, CLI##name::instance }
-    const std::unordered_map<std::string, CLICommand &> CLI::commands = {
+    const std::map<std::string, CLICommand &> CLI::commands = {
         COMMAND(setflag, SetFlag),
         COMMAND(getflag, GetFlag),
         COMMAND(getreg, GetReg),
@@ -584,6 +808,8 @@ CLI##name CLI##name::instance = CLI##name();
         COMMAND(clock, Clock),
         COMMAND(writemem, WriteMem),
         COMMAND(readmem, ReadMem),
+        COMMAND(readmicromem, ReadMicroMem),
+        COMMAND(writemicromem, WriteMicroMem),
         COMMAND(quit, Quit),
         COMMAND(exit, Exit),
         COMMAND(help, Help)

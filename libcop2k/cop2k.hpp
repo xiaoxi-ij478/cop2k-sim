@@ -62,11 +62,6 @@ namespace COP2K
                 callback = func;
             }
 
-            void set_callback(std::function<void(RegisterWithCallback &)> &&func)
-            {
-                callback = func;
-            }
-
             void clear_callback()
             {
                 callback = [](RegisterWithCallback &) {};
@@ -85,12 +80,12 @@ namespace COP2K
                 return data;
             }
 
-            constexpr void set()
+            constexpr void pos()
             {
                 data = true;
             }
 
-            constexpr void clear()
+            constexpr void neg()
             {
                 data = false;
             }
@@ -107,20 +102,20 @@ namespace COP2K
     class FlagWithCallback
     {
         public:
-            FlagWithCallback() : data(), callback([](FlagWithCallback &) {}) {}
+            FlagWithCallback() : callback([](FlagWithCallback &) {}), data() {}
 
             constexpr bool get() const
             {
                 return data;
             }
 
-            void set()
+            void pos()
             {
                 data = true;
                 callback(*this);
             }
 
-            void clear()
+            void neg()
             {
                 data = false;
                 callback(*this);
@@ -137,95 +132,15 @@ namespace COP2K
                 callback = func;
             }
 
-            void set_callback(std::function<void(FlagWithCallback &)> &&func)
-            {
-                callback = func;
-            }
-
             void clear_callback()
             {
                 callback = [](FlagWithCallback &) {};
             }
 
         private:
-            bool data : 1;
             std::function<void(FlagWithCallback &)> callback;
-
-    };
-
-    class NegFlag
-    {
-        public:
-            constexpr bool get() const
-            {
-                return data;
-            }
-
-            constexpr void set()
-            {
-                data = false;
-            }
-
-            constexpr void clear()
-            {
-                data = true;
-            }
-
-            constexpr void set(bool val)
-            {
-                data = val;
-            }
-
-        private:
             bool data : 1;
-    };
 
-    class NegFlagWithCallback
-    {
-        public:
-            NegFlagWithCallback() : data(), callback([](NegFlagWithCallback &) {}) {}
-
-            constexpr bool get() const
-            {
-                return data;
-            }
-
-            void set()
-            {
-                data = false;
-                callback(*this);
-            }
-
-            void clear()
-            {
-                data = true;
-                callback(*this);
-            }
-
-            void set(bool val)
-            {
-                data = val;
-                callback(*this);
-            }
-
-            void set_callback(const std::function<void(NegFlagWithCallback &)> &func)
-            {
-                callback = func;
-            }
-
-            void set_callback(std::function<void(NegFlagWithCallback &)> &&func)
-            {
-                callback = func;
-            }
-
-            void clear_callback()
-            {
-                callback = [](NegFlagWithCallback &) {};
-            }
-
-        private:
-            bool data : 1;
-            std::function<void(NegFlagWithCallback &)> callback;
     };
 
     class ALU
@@ -516,20 +431,19 @@ namespace COP2K
         public:
             constexpr COP2K()
             {
-                using namespace std::placeholders;
                 a.set_callback([this](RegisterWithCallback &) {
                     update_alu();
                 });
                 w.set_callback([this](RegisterWithCallback &) {
                     update_alu();
                 });
-                s0.set_callback([this](NegFlagWithCallback &) {
+                s0.set_callback([this](FlagWithCallback &) {
                     update_alu();
                 });
-                s1.set_callback([this](NegFlagWithCallback &) {
+                s1.set_callback([this](FlagWithCallback &) {
                     update_alu();
                 });
-                s2.set_callback([this](NegFlagWithCallback &) {
+                s2.set_callback([this](FlagWithCallback &) {
                     update_alu();
                 });
                 manual_dbus_input.set(0);
@@ -545,33 +459,34 @@ namespace COP2K
                 r1.set(0);
                 r2.set(0);
                 r3.set(0);
-                emwr.clear();
-                emrd.clear();
-                pcoe.clear();
-                emen.clear();
-                iren.clear();
-                eint.clear();
-                elp.clear();
-                maren.clear();
-                maroe.clear();
-                outen.clear();
-                sten.clear();
-                rrd.clear();
-                rwr.clear();
-                x2.clear();
-                x1.clear();
-                x0.clear();
-                wen.clear();
-                aen.clear();
-                s2.clear();
-                s1.clear();
-                s0.clear();
-                sa.clear();
-                sb.clear();
-                ireq.clear();
-                iack.clear();
-                running_manually.set();
-                halt.set();
+                emwr.pos();
+                emrd.pos();
+                pcoe.pos();
+                emen.pos();
+                iren.pos();
+                eint.pos();
+                elp.pos();
+                maren.pos();
+                maroe.pos();
+                outen.pos();
+                sten.pos();
+                rrd.pos();
+                rwr.pos();
+                x2.pos();
+                x1.pos();
+                x0.pos();
+                wen.pos();
+                aen.pos();
+                s2.pos();
+                s1.pos();
+                s0.pos();
+                sa.neg();
+                sb.neg();
+                ireq.neg();
+                iack.neg();
+                manual_dbus.pos();
+                running_manually.pos();
+                halt.pos();
             }
 
             constexpr void run_forever()
@@ -589,7 +504,7 @@ namespace COP2K
 
             constexpr void trigger_interrupt()
             {
-                ireq.set();
+                ireq.pos();
             }
 
             constexpr void set_dbus_manual_input(uint8_t val)
@@ -625,26 +540,26 @@ namespace COP2K
 
             // valid when FALSE
             // errr... don't know its usage
-            // NegFlag xrd;
-            NegFlag emwr;
-            NegFlag emrd;
-            NegFlag pcoe;
-            NegFlag emen;
-            NegFlag iren;
-            NegFlag eint;
-            NegFlag elp;
-            NegFlag maren;
-            NegFlag maroe;
-            NegFlag outen;
-            NegFlag sten;
-            NegFlag rrd;
-            NegFlag rwr;
+            // Flag xrd;
+            Flag emwr;
+            Flag emrd;
+            Flag pcoe;
+            Flag emen;
+            Flag iren;
+            Flag eint;
+            Flag elp;
+            Flag maren;
+            Flag maroe;
+            Flag outen;
+            Flag sten;
+            Flag rrd;
+            Flag rwr;
             // set in ALU
-            // NegFlag cn;
-            // NegFlag fen;
-            NegFlag x2, x1, x0;
-            NegFlag wen, aen;
-            NegFlagWithCallback s2, s1, s0;
+            // Flag cn;
+            // Flag fen;
+            Flag x2, x1, x0;
+            Flag wen, aen;
+            FlagWithCallback s2, s1, s0;
 
 
         private:
@@ -704,8 +619,8 @@ namespace COP2K
                 // if somebody is interrupting reply to them
                 if (ireq.get() && !iack.get()) {
                     ibus.set_writer(IBusWriterType::INTERRUPT);
-                    emrd.clear();
-                    iack.set();
+                    emrd.pos();
+                    iack.pos();
                 }
 
                 if (!emrd.get())
@@ -728,8 +643,8 @@ namespace COP2K
                 }
 
                 if (!eint.get()) {
-                    iack.clear();
-                    ireq.clear();
+                    iack.neg();
+                    ireq.neg();
                 }
 
                 if (!elp.get())
