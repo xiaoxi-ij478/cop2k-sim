@@ -100,7 +100,7 @@ namespace COP2K
 private: \
     CLI##name() {} \
 }; \
-CLI##name CLI##name::instance = CLI##name();
+CLI##name CLI##name::instance;
 
     BEGIN_CLI_COMMAND(Help, 0, 1, "help [command name]")
     {
