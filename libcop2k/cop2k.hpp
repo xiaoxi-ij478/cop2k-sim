@@ -416,6 +416,11 @@ namespace COP2K
                 mem.at(actaddr) = val;
             }
 
+            constexpr void set_data_at(uint8_t actaddr, unsigned bit_pos, bool val)
+            {
+                mem.at(actaddr).set(bit_pos, val);
+            }
+
             constexpr const std::bitset<24> &get_data_at(uint8_t actaddr) const
             {
                 return mem.at(actaddr);

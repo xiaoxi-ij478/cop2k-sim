@@ -6,18 +6,21 @@
 		<Option pch_mode="2" />
 		<Option compiler="gcc" />
 		<Build>
-			<Target title="Debug">
-				<Option output="bin/Debug/cop2k" prefix_auto="1" extension_auto="1" />
-				<Option object_output="obj/Debug/" />
+			<Target title="CLI Debug">
+				<Option output="bin/CLI Debug/cli" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/CLI Debug/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-ggdb3" />
 				</Compiler>
+				<Linker>
+					<Add directory="../libcop2k/bin/Debug" />
+				</Linker>
 			</Target>
-			<Target title="Release">
-				<Option output="bin/Release/cop2k" prefix_auto="1" extension_auto="1" />
-				<Option object_output="obj/Release/" />
+			<Target title="CLI Release">
+				<Option output="bin/CLI Release/cli" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/CLI Release/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
 				<Compiler>
@@ -25,7 +28,68 @@
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
+					<Add directory="../libcop2k/bin/Release" />
 				</Linker>
+			</Target>
+			<Target title="VM Debug">
+				<Option output="bin/VM Debug/vm" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/VM Debug/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-ggdb3" />
+				</Compiler>
+				<Linker>
+					<Add directory="../libcop2k/bin/Debug" />
+				</Linker>
+			</Target>
+			<Target title="VM Release">
+				<Option output="bin/VM Release/cop2k" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/VM Release/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Linker>
+					<Add directory="../libcop2k/bin/Release" />
+				</Linker>
+			</Target>
+			<Target title="AS Debug">
+				<Option output="bin/AS Debug/cop2k" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="bin/AS Debug/" />
+				<Option object_output="obj/AS Debug/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-ggdb3" />
+				</Compiler>
+				<Linker>
+					<Add directory="../libcop2k/bin/Debug" />
+				</Linker>
+			</Target>
+			<Target title="AS Release">
+				<Option output="bin/AS Release/cop2k" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="bin/AS Release/" />
+				<Option object_output="obj/AS Release/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O2" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+					<Add directory="../libcop2k/bin/Release" />
+				</Linker>
+			</Target>
+			<Target title="cop2k_ins_decompiler">
+				<Option output="bin/cop2k_ins_decompiler/cop2k_ins_decompiler" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="bin/cop2k_ins_decompiler/" />
+				<Option object_output="obj/cop2k_ins_decompiler/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Option parameters="/home/xiaoxi/Public/COP2000/INST.INS" />
+				<Option projectLinkerOptionsRelation="1" />
+				<Compiler>
+					<Add option="-ggdb3" />
+				</Compiler>
 			</Target>
 		</Build>
 		<Compiler>
@@ -36,9 +100,22 @@
 		</Compiler>
 		<Linker>
 			<Add library="cop2k" />
-			<Add directory="../libcop2k/bin/$(TARGET_NAME)" />
 		</Linker>
-		<Unit filename="main.cpp" />
+		<Unit filename="as.cpp">
+			<Option target="AS Debug" />
+			<Option target="AS Release" />
+		</Unit>
+		<Unit filename="cli.cpp">
+			<Option target="CLI Debug" />
+			<Option target="CLI Release" />
+		</Unit>
+		<Unit filename="cop2k_ins_decompiler.cpp">
+			<Option target="cop2k_ins_decompiler" />
+		</Unit>
+		<Unit filename="vm.cpp">
+			<Option target="VM Debug" />
+			<Option target="VM Release" />
+		</Unit>
 		<Extensions>
 			<lib_finder disable_auto="1" />
 		</Extensions>

@@ -229,7 +229,7 @@ CLI##name CLI##name::instance = CLI##name();
             SET_FLAG(halt);
 
         else
-            std::cerr << "error: no such flag: '" << args.at(0) << '\'' << std::endl;
+            std::cerr << "error: no such flag: '" << args.at(0) << "'." << std::endl;
 
 #undef SET_FLAG
     }
@@ -359,7 +359,7 @@ CLI##name CLI##name::instance = CLI##name();
             GET_FLAG(running_manually);
 
         else
-            std::cerr << "error: no such flag: '" << args.at(0) << '\'' << std::endl;
+            std::cerr << "error: no such flag: '" << args.at(0) << "'." << std::endl;
 
 #undef GET_FLAG
     }
@@ -458,7 +458,7 @@ CLI##name CLI##name::instance = CLI##name();
             GET_REG(r3);
 
         else
-            std::cerr << "error: no such register: '" << args.at(0) << '\'' << std::endl;
+            std::cerr << "error: no such register: '" << args.at(0) << "'." << std::endl;
 
 #undef GET_REG
     }
@@ -796,10 +796,43 @@ CLI##name CLI##name::instance = CLI##name();
     }
     END_CLI_COMMAND(WriteMicroMem)
 
+    BEGIN_CLI_COMMAND(HelpQuestionMark, 0, 1, "? [command name]")
+    {
+        CLICommand *cmd_func = nullptr;
+
+        if (args.empty()) {
+            for (const auto &i : cli.commands)
+                std::cout << "'" << i.first << "' usage: " << i.second.help_string() <<
+                          std::endl;
+
+            return;
+        }
+
+        try {
+            cmd_func = &cli.commands.at(args.at(0));
+
+        } catch (const std::out_of_range &) {
+            std::cerr << "error: command '" << args.at(0) << "' does not exist." <<
+                      std::endl;
+            return;
+        }
+
+        std::cout << "'" << args.at(0) << "' usage: " << cmd_func->help_string() <<
+                  std::endl;
+    }
+    END_CLI_COMMAND(HelpQuestionMark)
+
+    BEGIN_CLI_COMMAND(Interrupt, 0, 0, "interrupt")
+    {
+        cli.machine.trigger_interrupt();
+    }
+    END_CLI_COMMAND(Interrupt)
+
 #undef BEGIN_CLI_COMMAND
 #undef END_CLI_COMMAND
 
 #define COMMAND(cmd_str, name) { #cmd_str, CLI##name::instance }
+#define COMMAND_STRING(cmd, name) { cmd, CLI##name::instance }
     const std::map<std::string, CLICommand &> CLI::commands = {
         COMMAND(setflag, SetFlag),
         COMMAND(getflag, GetFlag),
@@ -812,7 +845,8 @@ CLI##name CLI##name::instance = CLI##name();
         COMMAND(writemicromem, WriteMicroMem),
         COMMAND(quit, Quit),
         COMMAND(exit, Exit),
-        COMMAND(help, Help)
+        COMMAND(help, Help),
+        COMMAND_STRING("?", HelpQuestionMark)
     };
 #undef COMMAND
 }

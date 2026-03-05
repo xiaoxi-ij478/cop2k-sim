@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
 <CodeBlocks_workspace_file>
 	<Workspace title="Workspace">
-		<Project filename="cop2k/cop2k.cbp" />
+		<Project filename="cop2k/cop2k.cbp">
+			<Depends filename="libcop2k/libcop2k.cbp" />
+		</Project>
 		<Project filename="libcop2k/libcop2k.cbp" />
 	</Workspace>
 </CodeBlocks_workspace_file>
