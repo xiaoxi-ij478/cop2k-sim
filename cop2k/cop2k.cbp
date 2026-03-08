@@ -58,6 +58,7 @@
 				<Option object_output="obj/AS Debug/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
+				<Option parameters="/home/xiaoxi/Codeblocks_Projects/cop2k/cop2k/instr.txt /home/xiaoxi/Codeblocks_Projects/cop2k/cop2k/instr.txt" />
 				<Compiler>
 					<Add option="-ggdb3" />
 				</Compiler>
@@ -105,12 +106,38 @@
 			<Option target="AS Debug" />
 			<Option target="AS Release" />
 		</Unit>
+		<Unit filename="as.hpp">
+			<Option target="AS Debug" />
+			<Option target="AS Release" />
+		</Unit>
+		<Unit filename="asm.l">
+			<Option target="AS Debug" />
+			<Option target="AS Release" />
+		</Unit>
+		<Unit filename="asm.y">
+			<Option target="AS Debug" />
+			<Option target="AS Release" />
+		</Unit>
 		<Unit filename="cli.cpp">
+			<Option target="CLI Debug" />
+			<Option target="CLI Release" />
+		</Unit>
+		<Unit filename="cli.hpp">
 			<Option target="CLI Debug" />
 			<Option target="CLI Release" />
 		</Unit>
 		<Unit filename="cop2k_ins_decompiler.cpp">
 			<Option target="cop2k_ins_decompiler" />
+		</Unit>
+		<Unit filename="instr.l">
+			<Option compile="1" />
+			<Option target="AS Debug" />
+			<Option target="AS Release" />
+		</Unit>
+		<Unit filename="instr.y">
+			<Option compile="1" />
+			<Option target="AS Debug" />
+			<Option target="AS Release" />
 		</Unit>
 		<Unit filename="vm.cpp">
 			<Option target="VM Debug" />

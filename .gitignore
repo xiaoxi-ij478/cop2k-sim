@@ -1,4 +1,14 @@
 *.depend
 *.layout
+*.parser.h
+*.parser.cpp
+*.parser.c
+*.scanner.c
+*.scanner.cpp
+*.tab.cpp
+*.tab.c
+*.yy.c
+*.yy.cpp
+ValgrindOut.xml
 bin/
 obj/

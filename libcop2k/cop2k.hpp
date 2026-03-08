@@ -220,10 +220,10 @@ namespace COP2K
                        );
             }
 
-            Flag cy;
+            FlagWithCallback cy;
+            FlagWithCallback cn;
             Flag z;
             Flag fen;
-            Flag cn;
         private:
             CalcTypes calc_type : 3;
     };
@@ -451,6 +451,12 @@ namespace COP2K
                 s2.set_callback([this](FlagWithCallback &) {
                     update_alu();
                 });
+                alu.cy.set_callback([this](FlagWithCallback &) {
+                    update_alu();
+                });
+                alu.cn.set_callback([this](FlagWithCallback &) {
+                    update_alu();
+                });
                 manual_dbus_input.set(0);
                 upc.set(0);
                 pc.set(0);
@@ -487,6 +493,8 @@ namespace COP2K
                 s0.pos();
                 sa.neg();
                 sb.neg();
+                pos_fen();
+                pos_cn();
                 ireq.neg();
                 iack.neg();
                 manual_dbus.pos();
@@ -515,6 +523,46 @@ namespace COP2K
             constexpr void set_dbus_manual_input(uint8_t val)
             {
                 manual_dbus_input.set(val);
+            }
+
+            constexpr void pos_fen()
+            {
+                alu.fen.pos();
+            }
+
+            constexpr void pos_cn()
+            {
+                alu.cn.pos();
+            }
+
+            constexpr void neg_fen()
+            {
+                alu.fen.neg();
+            }
+
+            constexpr void neg_cn()
+            {
+                alu.cn.neg();
+            }
+
+            constexpr void set_fen(bool val)
+            {
+                alu.fen.set(val);
+            }
+
+            constexpr void set_cn(bool val)
+            {
+                alu.cn.set(val);
+            }
+
+            constexpr bool get_fen() const
+            {
+                return alu.fen.get();
+            }
+
+            constexpr bool get_cn() const
+            {
+                return alu.cn.get();
             }
 
             Memory em;
@@ -570,6 +618,8 @@ namespace COP2K
         private:
             constexpr void update_alu()
             {
+                // note: must be careful not to cause another callback to
+                // call cthis function
                 alu.set_calc_type(
                     static_cast<ALU::CalcTypes>(s2.get() << 2 | s1.get() << 1 | s0.get())
                 );
@@ -595,8 +645,8 @@ namespace COP2K
                 x0.set(microprogram.test(5));
                 x1.set(microprogram.test(6));
                 x2.set(microprogram.test(7));
-                alu.fen.set(microprogram.test(8));
-                alu.cn.set(microprogram.test(9));
+                set_fen(microprogram.test(8));
+                set_cn(microprogram.test(9));
                 rwr.set(microprogram.test(10));
                 rrd.set(microprogram.test(11));
                 sten.set(microprogram.test(12));

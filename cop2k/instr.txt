@@ -1,200 +1,243 @@
-_FATCH_  @ 0x0: !emrd !pcoe !iren ;
-_FATCH_  @ 0x1: ;
-_FATCH_  @ 0x2: ;
-_FATCH_  @ 0x3: ;
-ADD A, R? @ 0x10: !rrd !wen ;
-ADD A, R? @ 0x11: !fen !x1 !x0 !aen !s2 !s1 !s0 ;
-ADD A, R? @ 0x12: !emrd !pcoe !iren ;
-ADD A, R? @ 0x13: ;
-ADD A, @R? @ 0x14: !maren !rrd ;
-ADD A, @R? @ 0x15: !emrd !emen !maroe !wen ;
-ADD A, @R? @ 0x16: !fen !x1 !x0 !aen !s2 !s1 !s0 ;
-ADD A, @R? @ 0x17: !emrd !pcoe !iren ;
-ADD A, MM @ 0x18: !emrd !pcoe !emen !maren ;
-ADD A, MM @ 0x19: !emrd !emen !maroe !wen ;
-ADD A, MM @ 0x1a: !fen !x1 !x0 !aen !s2 !s1 !s0 ;
-ADD A, MM @ 0x1b: !emrd !pcoe !iren ;
-ADD A, #II @ 0x1c: !emrd !pcoe !emen !wen ;
-ADD A, #II @ 0x1d: !fen !x1 !x0 !aen !s2 !s1 !s0 ;
-ADD A, #II @ 0x1e: !emrd !pcoe !iren ;
-ADD A, #II @ 0x1f: ;
-ADDC A, R? @ 0x20: !rrd !wen ;
-ADDC A, R? @ 0x21: !fen !x1 !x0 !aen !s1 !s0 ;
-ADDC A, R? @ 0x22: !emrd !pcoe !iren ;
-ADDC A, R? @ 0x23: ;
-ADDC A, @R? @ 0x24: !maren !rrd ;
-ADDC A, @R? @ 0x25: !emrd !emen !maroe !wen ;
-ADDC A, @R? @ 0x26: !fen !x1 !x0 !aen !s1 !s0 ;
-ADDC A, @R? @ 0x27: !emrd !pcoe !iren ;
-ADDC A, MM @ 0x28: !emrd !pcoe !emen !maren ;
-ADDC A, MM @ 0x29: !emrd !emen !maroe !wen ;
-ADDC A, MM @ 0x2a: !fen !x1 !x0 !aen !s1 !s0 ;
-ADDC A, MM @ 0x2b: !emrd !pcoe !iren ;
-ADDC A, #II @ 0x2c: !emrd !pcoe !emen !wen ;
-ADDC A, #II @ 0x2d: !fen !x1 !x0 !aen !s1 !s0 ;
-ADDC A, #II @ 0x2e: !emrd !pcoe !iren ;
-ADDC A, #II @ 0x2f: ;
-SUB A, R? @ 0x30: !rrd !wen ;
-SUB A, R? @ 0x31: !fen !x1 !x0 !aen !s2 !s1 ;
-SUB A, R? @ 0x32: !emrd !pcoe !iren ;
-SUB A, R? @ 0x33: ;
-SUB A, @R? @ 0x34: !maren !rrd ;
-SUB A, @R? @ 0x35: !emrd !emen !maroe !wen ;
-SUB A, @R? @ 0x36: !fen !x1 !x0 !aen !s2 !s1 ;
-SUB A, @R? @ 0x37: !emrd !pcoe !iren ;
-SUB A, MM @ 0x38: !emrd !pcoe !emen !maren ;
-SUB A, MM @ 0x39: !emrd !emen !maroe !wen ;
-SUB A, MM @ 0x3a: !fen !x1 !x0 !aen !s2 !s1 ;
-SUB A, MM @ 0x3b: !emrd !pcoe !iren ;
-SUB A, #II @ 0x3c: !emrd !pcoe !emen !wen ;
-SUB A, #II @ 0x3d: !fen !x1 !x0 !aen !s2 !s1 ;
-SUB A, #II @ 0x3e: !emrd !pcoe !iren ;
-SUB A, #II @ 0x3f: ;
-SUBC A, R? @ 0x40: !rrd !wen ;
-SUBC A, R? @ 0x41: !fen !x1 !x0 !aen !s1 ;
-SUBC A, R? @ 0x42: !emrd !pcoe !iren ;
-SUBC A, R? @ 0x43: ;
-SUBC A, @R? @ 0x44: !maren !rrd ;
-SUBC A, @R? @ 0x45: !emrd !emen !maroe !wen ;
-SUBC A, @R? @ 0x46: !fen !x1 !x0 !aen !s1 ;
-SUBC A, @R? @ 0x47: !emrd !pcoe !iren ;
-SUBC A, MM @ 0x48: !emrd !pcoe !emen !maren ;
-SUBC A, MM @ 0x49: !emrd !emen !maroe !wen ;
-SUBC A, MM @ 0x4a: !fen !x1 !x0 !aen !s1 ;
-SUBC A, MM @ 0x4b: !emrd !pcoe !iren ;
-SUBC A, #II @ 0x4c: !emrd !pcoe !emen !wen ;
-SUBC A, #II @ 0x4d: !fen !x1 !x0 !aen !s1 ;
-SUBC A, #II @ 0x4e: !emrd !pcoe !iren ;
-SUBC A, #II @ 0x4f: ;
-AND A, R? @ 0x50: !rrd !wen ;
-AND A, R? @ 0x51: !fen !x1 !x0 !aen !s2 ;
-AND A, R? @ 0x52: !emrd !pcoe !iren ;
-AND A, R? @ 0x53: ;
-AND A, @R? @ 0x54: !maren !rrd ;
-AND A, @R? @ 0x55: !emrd !emen !maroe !wen ;
-AND A, @R? @ 0x56: !fen !x1 !x0 !aen !s2 ;
-AND A, @R? @ 0x57: !emrd !pcoe !iren ;
-AND A, MM @ 0x58: !emrd !pcoe !emen !maren ;
-AND A, MM @ 0x59: !emrd !emen !maroe !wen ;
-AND A, MM @ 0x5a: !fen !x1 !x0 !aen !s2 ;
-AND A, MM @ 0x5b: !emrd !pcoe !iren ;
-AND A, #II @ 0x5c: !emrd !pcoe !emen !wen ;
-AND A, #II @ 0x5d: !fen !x1 !x0 !aen !s2 ;
-AND A, #II @ 0x5e: !emrd !pcoe !iren ;
-AND A, #II @ 0x5f: ;
-OR A, R? @ 0x60: !rrd !wen ;
-OR A, R? @ 0x61: !fen !x1 !x0 !aen !s2 !s0 ;
-OR A, R? @ 0x62: !emrd !pcoe !iren ;
-OR A, R? @ 0x63: ;
-OR A, @R? @ 0x64: !maren !rrd ;
-OR A, @R? @ 0x65: !emrd !emen !maroe !wen ;
-OR A, @R? @ 0x66: !fen !x1 !x0 !aen !s2 !s0 ;
-OR A, @R? @ 0x67: !emrd !pcoe !iren ;
-OR A, MM @ 0x68: !emrd !pcoe !emen !maren ;
-OR A, MM @ 0x69: !emrd !emen !maroe !wen ;
-OR A, MM @ 0x6a: !fen !x1 !x0 !aen !s2 !s0 ;
-OR A, MM @ 0x6b: !emrd !pcoe !iren ;
-OR A, #II @ 0x6c: !emrd !pcoe !emen !wen ;
-OR A, #II @ 0x6d: !fen !x1 !x0 !aen !s2 !s0 ;
-OR A, #II @ 0x6e: !emrd !pcoe !iren ;
-OR A, #II @ 0x6f: ;
-MOV A, R? @ 0x70: !rrd !aen ;
-MOV A, R? @ 0x71: !emrd !pcoe !iren ;
-MOV A, R? @ 0x72: ;
-MOV A, R? @ 0x73: ;
-MOV A, @R? @ 0x74: !maren !rrd ;
-MOV A, @R? @ 0x75: !emrd !emen !maroe !aen ;
-MOV A, @R? @ 0x76: !emrd !pcoe !iren ;
-MOV A, @R? @ 0x77: ;
-MOV A, MM @ 0x78: !emrd !pcoe !emen !maren ;
-MOV A, MM @ 0x79: !emrd !emen !maroe !aen ;
-MOV A, MM @ 0x7a: !emrd !pcoe !iren ;
-MOV A, MM @ 0x7b: ;
-MOV A, #II @ 0x7c: !emrd !pcoe !emen !aen ;
-MOV A, #II @ 0x7d: !emrd !pcoe !iren ;
-MOV A, #II @ 0x7e: ;
-MOV A, #II @ 0x7f: ;
-MOV R?, A @ 0x80: !rwr !x1 !x0 ;
-MOV R?, A @ 0x81: !emrd !pcoe !iren ;
-MOV R?, A @ 0x82: ;
-MOV R?, A @ 0x83: ;
-MOV @R?, A @ 0x84: !maren !rrd ;
-MOV @R?, A @ 0x85: !emwr !emen !maroe !x1 !x0 ;
-MOV @R?, A @ 0x86: !emrd !pcoe !iren ;
-MOV @R?, A @ 0x87: ;
-MOV MM, A @ 0x88: !emrd !pcoe !emen !maren ;
-MOV MM, A @ 0x89: !emwr !emen !maroe !x1 !x0 ;
-MOV MM, A @ 0x8a: !emrd !pcoe !iren ;
-MOV MM, A @ 0x8b: ;
-MOV R?, #II @ 0x8c: !emrd !pcoe !emen !rwr ;
-MOV R?, #II @ 0x8d: !emrd !pcoe !iren ;
-MOV R?, #II @ 0x8e: ;
-MOV R?, #II @ 0x8f: ;
-READ A, MM @ 0x90: !emrd !pcoe !emen !maren ;
-READ A, MM @ 0x91: !maren !wen !s0 ;
-READ A, MM @ 0x92: !emrd !pcoe !iren ;
-READ A, MM @ 0x93: ;
-WRITE MM, A @ 0x94: !emrd !pcoe !emen !maren ;
-WRITE MM, A @ 0x95: !maroe !outen !x1 !x0 ;
-WRITE MM, A @ 0x96: !emrd !pcoe !iren ;
-WRITE MM, A @ 0x97: ;
-JC MM @ 0xa0: !emrd !pcoe !emen !elp ;
-JC MM @ 0xa1: !emrd !pcoe !iren ;
-JC MM @ 0xa2: ;
-JC MM @ 0xa3: ;
-JZ MM @ 0xa4: !emrd !pcoe !emen !elp ;
-JZ MM @ 0xa5: !emrd !pcoe !iren ;
-JZ MM @ 0xa6: ;
-JZ MM @ 0xa7: ;
-JMP MM @ 0xac: !emrd !pcoe !emen !elp ;
-JMP MM @ 0xad: !emrd !pcoe !iren ;
-JMP MM @ 0xae: ;
-JMP MM @ 0xaf: ;
-_INT_  @ 0xb8: !sten !x2 ;
-_INT_  @ 0xb9: !elp !x2 !x1 ;
-_INT_  @ 0xba: !emrd !pcoe !iren ;
-_INT_  @ 0xbb: ;
-CALL MM @ 0xbc: !pcoe !maren !x2 ;
-CALL MM @ 0xbd: !sten !x2 ;
-CALL MM @ 0xbe: !emrd !emen !elp !maroe ;
-CALL MM @ 0xbf: !emrd !pcoe !iren ;
-IN  @ 0xc0: !x2 !x1 !x0 !aen ;
-IN  @ 0xc1: !emrd !pcoe !iren ;
-IN  @ 0xc2: ;
-IN  @ 0xc3: ;
-OUT  @ 0xc4: !outen !x1 !x0 ;
-OUT  @ 0xc5: !emrd !pcoe !iren ;
-OUT  @ 0xc6: ;
-OUT  @ 0xc7: ;
-RET  @ 0xcc: !elp !x2 !x0 ;
-RET  @ 0xcd: !emrd !pcoe !iren ;
-RET  @ 0xce: ;
-RET  @ 0xcf: ;
-RR A @ 0xd0: !cn !fen !x1 !aen ;
-RR A @ 0xd1: !emrd !pcoe !iren ;
-RR A @ 0xd2: ;
-RR A @ 0xd3: ;
-RL A @ 0xd4: !cn !fen !x0 !aen ;
-RL A @ 0xd5: !emrd !pcoe !iren ;
-RL A @ 0xd6: ;
-RL A @ 0xd7: ;
-RRC A @ 0xd8: !fen !x1 !aen ;
-RRC A @ 0xd9: !emrd !pcoe !iren ;
-RRC A @ 0xda: ;
-RRC A @ 0xdb: ;
-RLC A @ 0xdc: !fen !x0 !aen ;
-RLC A @ 0xdd: !emrd !pcoe !iren ;
-RLC A @ 0xde: ;
-RLC A @ 0xdf: ;
-NOP  @ 0xe0: !emrd !pcoe !iren ;
-NOP  @ 0xe1: ;
-NOP  @ 0xe2: ;
-NOP  @ 0xe3: ;
-CPL A @ 0xe4: !fen !x1 !x0 !aen !s0 ;
-CPL A @ 0xe5: !emrd !pcoe !iren ;
-CPL A @ 0xe6: ;
-CPL A @ 0xe7: ;
-RETI  @ 0xec: !eint !elp !x2 !x0 ;
-RETI  @ 0xed: !emrd !pcoe !iren ;
-RETI  @ 0xee: ;
-RETI  @ 0xef: ;
+_FATCH_  @ 0x0:
+    0: !emrd !pcoe !iren
+;
+ADD A, R? @ 0x10:
+    0: !rrd !wen
+    1: !fen !x1 !x0 !aen !s2 !s1 !s0
+    2: !emrd !pcoe !iren
+;
+ADD A, @R? @ 0x14:
+    0: !maren !rrd
+    1: !emrd !emen !maroe !wen
+    2: !fen !x1 !x0 !aen !s2 !s1 !s0
+    3: !emrd !pcoe !iren
+;
+ADD A, MM @ 0x18:
+    0: !emrd !pcoe !emen !maren
+    1: !emrd !emen !maroe !wen
+    2: !fen !x1 !x0 !aen !s2 !s1 !s0
+    3: !emrd !pcoe !iren
+;
+ADD A, #II @ 0x1c:
+    0: !emrd !pcoe !emen !wen
+    1: !fen !x1 !x0 !aen !s2 !s1 !s0
+    2: !emrd !pcoe !iren
+;
+ADDC A, R? @ 0x20:
+    0: !rrd !wen
+    1: !fen !x1 !x0 !aen !s1 !s0
+    2: !emrd !pcoe !iren
+;
+ADDC A, @R? @ 0x24:
+    0: !maren !rrd
+    1: !emrd !emen !maroe !wen
+    2: !fen !x1 !x0 !aen !s1 !s0
+    3: !emrd !pcoe !iren
+;
+ADDC A, MM @ 0x28:
+    0: !emrd !pcoe !emen !maren
+    1: !emrd !emen !maroe !wen
+    2: !fen !x1 !x0 !aen !s1 !s0
+    3: !emrd !pcoe !iren
+;
+ADDC A, #II @ 0x2c:
+    0: !emrd !pcoe !emen !wen
+    1: !fen !x1 !x0 !aen !s1 !s0
+    2: !emrd !pcoe !iren
+;
+SUB A, R? @ 0x30:
+    0: !rrd !wen
+    1: !fen !x1 !x0 !aen !s2 !s1
+    2: !emrd !pcoe !iren
+;
+SUB A, @R? @ 0x34:
+    0: !maren !rrd
+    1: !emrd !emen !maroe !wen
+    2: !fen !x1 !x0 !aen !s2 !s1
+    3: !emrd !pcoe !iren
+;
+SUB A, MM @ 0x38:
+    0: !emrd !pcoe !emen !maren
+    1: !emrd !emen !maroe !wen
+    2: !fen !x1 !x0 !aen !s2 !s1
+    3: !emrd !pcoe !iren
+;
+SUB A, #II @ 0x3c:
+    0: !emrd !pcoe !emen !wen
+    1: !fen !x1 !x0 !aen !s2 !s1
+    2: !emrd !pcoe !iren
+;
+SUBC A, R? @ 0x40:
+    0: !rrd !wen
+    1: !fen !x1 !x0 !aen !s1
+    2: !emrd !pcoe !iren
+;
+SUBC A, @R? @ 0x44:
+    0: !maren !rrd
+    1: !emrd !emen !maroe !wen
+    2: !fen !x1 !x0 !aen !s1
+    3: !emrd !pcoe !iren
+;
+SUBC A, MM @ 0x48:
+    0: !emrd !pcoe !emen !maren
+    1: !emrd !emen !maroe !wen
+    2: !fen !x1 !x0 !aen !s1
+    3: !emrd !pcoe !iren
+;
+SUBC A, #II @ 0x4c:
+    0: !emrd !pcoe !emen !wen
+    1: !fen !x1 !x0 !aen !s1
+    2: !emrd !pcoe !iren
+;
+AND A, R? @ 0x50:
+    0: !rrd !wen
+    1: !fen !x1 !x0 !aen !s2
+    2: !emrd !pcoe !iren
+;
+AND A, @R? @ 0x54:
+    0: !maren !rrd
+    1: !emrd !emen !maroe !wen
+    2: !fen !x1 !x0 !aen !s2
+    3: !emrd !pcoe !iren
+;
+AND A, MM @ 0x58:
+    0: !emrd !pcoe !emen !maren
+    1: !emrd !emen !maroe !wen
+    2: !fen !x1 !x0 !aen !s2
+    3: !emrd !pcoe !iren
+;
+AND A, #II @ 0x5c:
+    0: !emrd !pcoe !emen !wen
+    1: !fen !x1 !x0 !aen !s2
+    2: !emrd !pcoe !iren
+;
+OR A, R? @ 0x60:
+    0: !rrd !wen
+    1: !fen !x1 !x0 !aen !s2 !s0
+    2: !emrd !pcoe !iren
+;
+OR A, @R? @ 0x64:
+    0: !maren !rrd
+    1: !emrd !emen !maroe !wen
+    2: !fen !x1 !x0 !aen !s2 !s0
+    3: !emrd !pcoe !iren
+;
+OR A, MM @ 0x68:
+    0: !emrd !pcoe !emen !maren
+    1: !emrd !emen !maroe !wen
+    2: !fen !x1 !x0 !aen !s2 !s0
+    3: !emrd !pcoe !iren
+;
+OR A, #II @ 0x6c:
+    0: !emrd !pcoe !emen !wen
+    1: !fen !x1 !x0 !aen !s2 !s0
+    2: !emrd !pcoe !iren
+;
+MOV A, R? @ 0x70:
+    0: !rrd !aen
+    1: !emrd !pcoe !iren
+;
+MOV A, @R? @ 0x74:
+    0: !maren !rrd
+    1: !emrd !emen !maroe !aen
+    2: !emrd !pcoe !iren
+;
+MOV A, MM @ 0x78:
+    0: !emrd !pcoe !emen !maren
+    1: !emrd !emen !maroe !aen
+    2: !emrd !pcoe !iren
+;
+MOV A, #II @ 0x7c:
+    0: !emrd !pcoe !emen !aen
+    1: !emrd !pcoe !iren
+;
+MOV R?, A @ 0x80:
+    0: !rwr !x1 !x0
+    1: !emrd !pcoe !iren
+;
+MOV @R?, A @ 0x84:
+    0: !maren !rrd
+    1: !emwr !emen !maroe !x1 !x0
+    2: !emrd !pcoe !iren
+;
+MOV MM, A @ 0x88:
+    0: !emrd !pcoe !emen !maren
+    1: !emwr !emen !maroe !x1 !x0
+    2: !emrd !pcoe !iren
+;
+MOV R?, #II @ 0x8c:
+    0: !emrd !pcoe !emen !rwr
+    1: !emrd !pcoe !iren
+;
+READ A, MM @ 0x90:
+    0: !emrd !pcoe !emen !maren
+    1: !maren !wen !s0
+    2: !emrd !pcoe !iren
+;
+WRITE MM, A @ 0x94:
+    0: !emrd !pcoe !emen !maren
+    1: !maroe !outen !x1 !x0
+    2: !emrd !pcoe !iren
+;
+JC MM @ 0xa0:
+    0: !emrd !pcoe !emen !elp
+    1: !emrd !pcoe !iren
+;
+JZ MM @ 0xa4:
+    0: !emrd !pcoe !emen !elp
+    1: !emrd !pcoe !iren
+;
+JMP MM @ 0xac:
+    0: !emrd !pcoe !emen !elp
+    1: !emrd !pcoe !iren
+;
+_INT_  @ 0xb8:
+    0: !sten !x2
+    1: !elp !x2 !x1
+    2: !emrd !pcoe !iren
+;
+CALL MM @ 0xbc:
+    0: !pcoe !maren !x2
+    1: !sten !x2
+    2: !emrd !emen !elp !maroe
+    3: !emrd !pcoe !iren
+;
+IN  @ 0xc0:
+    0: !x2 !x1 !x0 !aen
+    1: !emrd !pcoe !iren
+;
+OUT  @ 0xc4:
+    0: !outen !x1 !x0
+    1: !emrd !pcoe !iren
+;
+RET  @ 0xcc:
+    0: !elp !x2 !x0
+    1: !emrd !pcoe !iren
+;
+RR A @ 0xd0:
+    0: !cn !fen !x1 !aen
+    1: !emrd !pcoe !iren
+;
+RL A @ 0xd4:
+    0: !cn !fen !x0 !aen
+    1: !emrd !pcoe !iren
+;
+RRC A @ 0xd8:
+    0: !fen !x1 !aen
+    1: !emrd !pcoe !iren
+;
+RLC A @ 0xdc:
+    0: !fen !x0 !aen
+    1: !emrd !pcoe !iren
+;
+NOP  @ 0xe0:
+    0: !emrd !pcoe !iren
+;
+CPL A @ 0xe4:
+    0: !fen !x1 !x0 !aen !s0
+    1: !emrd !pcoe !iren
+;
+RETI  @ 0xec:
+    0: !eint !elp !x2 !x0
+    1: !emrd !pcoe !iren
+;

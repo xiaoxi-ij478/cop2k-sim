@@ -73,64 +73,66 @@ int main(int argc, char **argv)
         if (!instr[i].exist)
             continue;
 
+        std::cout << instr[i].name << ' ';
+
+        switch (instr[i].src) {
+            case Operand::NONE:
+                break;
+
+            case Operand::A:
+                std::cout << "A";
+                break;
+
+            case Operand::REG:
+                std::cout << "R?";
+                break;
+
+            case Operand::REGADDR:
+                std::cout << "@R?";
+                break;
+
+            case Operand::IMMED:
+                std::cout << "#II";
+                break;
+
+            case Operand::ADDR:
+                std::cout << "MM";
+                break;
+        }
+
+        switch (instr[i].dst) {
+            case Operand::NONE:
+                break;
+
+            case Operand::A:
+                std::cout << ", A";
+                break;
+
+            case Operand::REG:
+                std::cout << ", R?";
+                break;
+
+            case Operand::REGADDR:
+                std::cout << ", @R?";
+                break;
+
+            case Operand::IMMED:
+                std::cout << ", #II";
+                break;
+
+            case Operand::ADDR:
+                std::cout << ", MM";
+                break;
+        }
+
+        std::cout << " @ " <<
+                  std::showbase << std::hex << std::setw(2) <<
+                  (i<<2) <<
+                  std::dec << std::noshowbase << std::setw(0) <<
+                  ": "<<std::endl;
+
         for (unsigned j = i << 2; j < (i << 2) + 4; j++) {
-            std::cout << instr[i].name << ' ';
-
-            switch (instr[i].src) {
-                case Operand::NONE:
-                    break;
-
-                case Operand::A:
-                    std::cout << "A";
-                    break;
-
-                case Operand::REG:
-                    std::cout << "R?";
-                    break;
-
-                case Operand::REGADDR:
-                    std::cout << "@R?";
-                    break;
-
-                case Operand::IMMED:
-                    std::cout << "#II";
-                    break;
-
-                case Operand::ADDR:
-                    std::cout << "MM";
-                    break;
-            }
-
-            switch (instr[i].dst) {
-                case Operand::NONE:
-                    break;
-
-                case Operand::A:
-                    std::cout << ", A";
-                    break;
-
-                case Operand::REG:
-                    std::cout << ", R?";
-                    break;
-
-                case Operand::REGADDR:
-                    std::cout << ", @R?";
-                    break;
-
-                case Operand::IMMED:
-                    std::cout << ", #II";
-                    break;
-
-                case Operand::ADDR:
-                    std::cout << ", MM";
-                    break;
-            }
-
-            std::cout << " @ " <<
-                      std::showbase << std::hex << std::setw(2) <<
-                      j <<
-                      std::dec << std::noshowbase << std::setw(0) <<
-                      ": ";
+                std::cout<<"    "<<j-(i<<2)<<": ";
 #define GET_BIT(pos, name) \
     if(!um[j].test(23-pos))std::cout<<"!"#name" "
             GET_BIT(22, emwr);
@@ -157,7 +159,8 @@ int main(int argc, char **argv)
             GET_BIT(1, s1);
             GET_BIT(0, s0);
 #undef GET_BIT
-            std::cout << ';' << std::endl;
+            std::cout << std::endl;
         }
+        std::cout<<';'<<std::endl;
     }
 }
