@@ -1,1 +1,559 @@
+%{
+#include <iostream>
+#include <stack>
 
+#include "as.hpp"
+
+extern int yylex(void);
+extern int yylineno;
+extern FILE *yyin;
+
+static std::stack<bool> block_status;
+
+static bool block_active() { return block_status.empty() || block_status.top(); }
+static void push_block(bool val) { block_status.push(val); }
+static void pop_block() { block_status.pop(); }
+static bool top_block() { return block_status.top(); }
+
+#define RN_RN_NOT_SUPPORTED(a, b) \
+    do { \
+        yyerror("R"#a", R"#b" not supported"); \
+        YYERROR; \
+    } while(0)
+
+#define RN_ARN_NOT_SUPPORTED(a, b) \
+    do { \
+        yyerror("R"#a", @R"#b" not supported"); \
+        YYERROR; \
+    } while(0)
+
+#define ARN_RN_NOT_SUPPORTED(a, b) \
+    do { \
+        yyerror("@R"#a", R"#b" not supported"); \
+        YYERROR; \
+    } while(0)
+
+#define ARN_ARN_NOT_SUPPORTED(a, b) \
+    do { \
+        yyerror("@R"#a", @R"#b" not supported"); \
+        YYERROR; \
+    } while(0)
+
+void yyerror(const char *s)
+{
+    std::cerr << "syntax error at line " << yylineno << ": " << s << std::endl;
+}
+%}
+
+%union {
+    int number_v;
+    char *identifier_v;
+    struct {
+        char *mnemonic;
+        AsmInstructionOperandYacc operand;
+    } instruction_v;
+    AsmInstructionOperandYacc instruction_operand_v;
+}
+
+%token EQU R0 R1 R2 R3 AT_R0 AT_R1 AT_R2 AT_R3
+%token DB ORG END IF ELSE ENDIF
+
+%token <identifier_v>          IDENTIFIER
+%token <number_v>              NUMBER
+
+%type  <number_v>              expression
+%type  <instruction_v>         instruction
+%type  <instruction_operand_v> operand
+
+// operator precedence is the same as that in C
+%left '|'
+%left '^'
+%left '&'
+%left '<' '>'
+%left '+' '-'
+%left '*' '/' '%'
+%right '!' UNNEG UNPOS
+
+%%
+
+program
+    : // none
+    | program instruction {
+        add_instruction($2.mnemonic, $2.operand);
+        free($2.mnemonic);
+        $2.mnemonic = nullptr;
+    }
+;
+
+instruction
+    : IDENTIFIER operand '\n'
+       /* we must not use fixed mnemonic set
+        * because instruction set is not fixed */
+    {
+        if (block_active()) {
+            $$.mnemonic = $1;
+            $$.operand = $2;
+        }
+    }
+    | DB expression '\n' {
+        if (block_active()) {
+            $$.mnemonic = "db";
+            $$.operand.src_type = Operand::MEMADDR;
+            $$.operand.dst_type = Operand::NONE;
+            $$.operand.src = $2;
+        }
+    }
+    | ORG expression '\n' {
+        if (block_active()) {
+            $$.mnemonic = "org";
+            $$.operand.src_type = Operand::MEMADDR;
+            $$.operand.dst_type = Operand::NONE;
+            $$.operand.src = $2;
+        }
+    }
+    | END '\n' {
+        if (block_active()) {
+            $$.mnemonic = "end";
+            $$.operand.src_type = $$.operand.dst_type = Operand::NONE;
+        }
+    }
+    | IF expression '\n' {
+        push_block($2);
+    }
+    | ELSE '\n' {
+        bool n = !top_block();
+        pop_block();
+        push_block(n);
+    }
+    | ENDIF '\n' {
+        pop_block();
+    }
+    | error '\n' {
+        // error messages has been printed by their perspective rules
+        yyerrok;
+        yyclearin;
+    }
+;
+
+operand
+    : { // none
+        $$.src_type = $$.dst_type = Operand::NONE;
+    }
+    | 'a' {
+        $$.src_type = Operand::REG_A;
+        $$.dst_type = Operand::NONE;
+    }
+    | R0 {
+        $$.src_type = Operand::REG;
+        $$.dst_type = Operand::NONE;
+        $$.src = 0;
+    }
+    | R1 {
+        $$.src_type = Operand::REG;
+        $$.dst_type = Operand::NONE;
+        $$.src = 1;
+    }
+    | R2 {
+        $$.src_type = Operand::REG;
+        $$.dst_type = Operand::NONE;
+        $$.src = 2;
+    }
+    | R3 {
+        $$.src_type = Operand::REG;
+        $$.dst_type = Operand::NONE;
+        $$.src = 3;
+    }
+    | AT_R0 {
+        $$.src_type = Operand::REGADDR;
+        $$.dst_type = Operand::NONE;
+        $$.src = 0;
+    }
+    | AT_R1 {
+        $$.src_type = Operand::REGADDR;
+        $$.dst_type = Operand::NONE;
+        $$.src = 1;
+    }
+    | AT_R2 {
+        $$.src_type = Operand::REGADDR;
+        $$.dst_type = Operand::NONE;
+        $$.src = 2;
+    }
+    | AT_R3 {
+        $$.src_type = Operand::REGADDR;
+        $$.dst_type = Operand::NONE;
+        $$.src = 3;
+    }
+    | '#' expression {
+        $$.src_type = Operand::IMMED;
+        $$.dst_type = Operand::NONE;
+        $$.src = $2;
+    }
+    | expression {
+        $$.src_type = Operand::MEMADDR;
+        $$.dst_type = Operand::NONE;
+        $$.src = $1;
+    }
+    | 'a' ',' 'a' {
+        $$.src_type = Operand::REG_A;
+        $$.dst_type = Operand::REG_A;
+    }
+    | 'a' ',' R0 {
+        $$.src_type = Operand::REG_A;
+        $$.dst_type = Operand::REG;
+    }
+    | 'a' ',' R1 {
+        $$.src_type = Operand::REG_A;
+        $$.dst_type = Operand::REG;
+    }
+    | 'a' ',' R2 {
+        $$.src_type = Operand::REG_A;
+        $$.dst_type = Operand::REG;
+    }
+    | 'a' ',' R3 {
+        $$.src_type = Operand::REG_A;
+        $$.dst_type = Operand::REG;
+    }
+    | 'a' ',' AT_R0 {
+        $$.src_type = Operand::REG_A;
+        $$.dst_type = Operand::REGADDR;
+    }
+    | 'a' ',' AT_R1 {
+        $$.src_type = Operand::REG_A;
+        $$.dst_type = Operand::REGADDR;
+    }
+    | 'a' ',' AT_R2 {
+        $$.src_type = Operand::REG_A;
+        $$.dst_type = Operand::REGADDR;
+    }
+    | 'a' ',' AT_R3 {
+        $$.src_type = Operand::REG_A;
+        $$.dst_type = Operand::REGADDR;
+    }
+    | 'a' ',' '#' expression {
+        $$.src_type = Operand::REG_A;
+        $$.dst_type = Operand::IMMED;
+        $$.dst = $4;
+    }
+    | 'a' ',' expression {
+        $$.src_type = Operand::REG_A;
+        $$.dst_type = Operand::MEMADDR;
+        $$.dst = $3;
+    }
+    | R0 ',' 'a' {
+        $$.src_type = Operand::REG;
+        $$.dst_type = Operand::REG_A;
+    }
+    | R0 ',' R0    { RN_RN_NOT_SUPPORTED(0, 0); }
+    | R0 ',' R1    { RN_RN_NOT_SUPPORTED(0, 1); }
+    | R0 ',' R2    { RN_RN_NOT_SUPPORTED(0, 2); }
+    | R0 ',' R3    { RN_RN_NOT_SUPPORTED(0, 3); }
+    | R0 ',' AT_R0 { RN_ARN_NOT_SUPPORTED(0, 0); }
+    | R0 ',' AT_R1 { RN_ARN_NOT_SUPPORTED(0, 1); }
+    | R0 ',' AT_R2 { RN_ARN_NOT_SUPPORTED(0, 2); }
+    | R0 ',' AT_R3 { RN_ARN_NOT_SUPPORTED(0, 3); }
+    | R0 ',' '#' expression {
+        $$.src_type = Operand::REG;
+        $$.dst_type = Operand::IMMED;
+        $$.dst = $4;
+    }
+    | R0 ',' expression {
+        $$.src_type = Operand::REG;
+        $$.dst_type = Operand::MEMADDR;
+        $$.dst = $3;
+    }
+    | R1 ',' 'a' {
+        $$.src_type = Operand::REG;
+        $$.dst_type = Operand::REG_A;
+    }
+    | R1 ',' R0    { RN_RN_NOT_SUPPORTED(1, 0); }
+    | R1 ',' R1    { RN_RN_NOT_SUPPORTED(1, 1); }
+    | R1 ',' R2    { RN_RN_NOT_SUPPORTED(1, 2); }
+    | R1 ',' R3    { RN_RN_NOT_SUPPORTED(1, 3); }
+    | R1 ',' AT_R0 { RN_ARN_NOT_SUPPORTED(1, 0); }
+    | R1 ',' AT_R1 { RN_ARN_NOT_SUPPORTED(1, 1); }
+    | R1 ',' AT_R2 { RN_ARN_NOT_SUPPORTED(1, 2); }
+    | R1 ',' AT_R3 { RN_ARN_NOT_SUPPORTED(1, 3); }
+    | R1 ',' '#' expression {
+        $$.src_type = Operand::REG;
+        $$.dst_type = Operand::IMMED;
+        $$.dst = $4;
+    }
+    | R1 ',' expression {
+        $$.src_type = Operand::REG;
+        $$.dst_type = Operand::MEMADDR;
+        $$.dst = $3;
+    }
+    | R2 ',' 'a' {
+        $$.src_type = Operand::REG;
+        $$.dst_type = Operand::REG_A;
+    }
+    | R2 ',' R0    { RN_RN_NOT_SUPPORTED(2, 0); }
+    | R2 ',' R1    { RN_RN_NOT_SUPPORTED(2, 1); }
+    | R2 ',' R2    { RN_RN_NOT_SUPPORTED(2, 2); }
+    | R2 ',' R3    { RN_RN_NOT_SUPPORTED(2, 3); }
+    | R2 ',' AT_R0 { RN_ARN_NOT_SUPPORTED(2, 0); }
+    | R2 ',' AT_R1 { RN_ARN_NOT_SUPPORTED(2, 1); }
+    | R2 ',' AT_R2 { RN_ARN_NOT_SUPPORTED(2, 2); }
+    | R2 ',' AT_R3 { RN_ARN_NOT_SUPPORTED(2, 3); }
+    | R2 ',' '#' expression {
+        $$.src_type = Operand::REG;
+        $$.dst_type = Operand::IMMED;
+        $$.dst = $4;
+    }
+    | R2 ',' expression {
+        $$.src_type = Operand::REG;
+        $$.dst_type = Operand::MEMADDR;
+        $$.dst = $3;
+    }
+    | R3 ',' 'a' {
+        $$.src_type = Operand::REG;
+        $$.dst_type = Operand::REG_A;
+    }
+    | R3 ',' R0    { RN_RN_NOT_SUPPORTED(3, 0); }
+    | R3 ',' R1    { RN_RN_NOT_SUPPORTED(3, 1); }
+    | R3 ',' R2    { RN_RN_NOT_SUPPORTED(3, 2); }
+    | R3 ',' R3    { RN_RN_NOT_SUPPORTED(3, 3); }
+    | R3 ',' AT_R0 { RN_ARN_NOT_SUPPORTED(3, 0); }
+    | R3 ',' AT_R1 { RN_ARN_NOT_SUPPORTED(3, 1); }
+    | R3 ',' AT_R2 { RN_ARN_NOT_SUPPORTED(3, 2); }
+    | R3 ',' AT_R3 { RN_ARN_NOT_SUPPORTED(3, 3); }
+    | R3 ',' '#' expression {
+        $$.src_type = Operand::REG;
+        $$.dst_type = Operand::IMMED;
+        $$.dst = $4;
+    }
+    | R3 ',' expression {
+        $$.src_type = Operand::REG;
+        $$.dst_type = Operand::MEMADDR;
+        $$.dst = $3;
+    }
+    | AT_R0 ',' 'a' {
+        $$.src_type = Operand::REGADDR;
+        $$.dst_type = Operand::REG_A;
+    }
+    | AT_R0 ',' R0    { ARN_RN_NOT_SUPPORTED(0, 0); }
+    | AT_R0 ',' R1    { ARN_RN_NOT_SUPPORTED(0, 1); }
+    | AT_R0 ',' R2    { ARN_RN_NOT_SUPPORTED(0, 2); }
+    | AT_R0 ',' R3    { ARN_RN_NOT_SUPPORTED(0, 3); }
+    | AT_R0 ',' AT_R0 { ARN_ARN_NOT_SUPPORTED(0, 0); }
+    | AT_R0 ',' AT_R1 { ARN_ARN_NOT_SUPPORTED(0, 1); }
+    | AT_R0 ',' AT_R2 { ARN_ARN_NOT_SUPPORTED(0, 2); }
+    | AT_R0 ',' AT_R3 { ARN_ARN_NOT_SUPPORTED(0, 3); }
+    | AT_R0 ',' '#' expression {
+        $$.src_type = Operand::REGADDR;
+        $$.dst_type = Operand::IMMED;
+        $$.dst = $4;
+    }
+    | AT_R0 ',' expression {
+        $$.src_type = Operand::REGADDR;
+        $$.dst_type = Operand::MEMADDR;
+        $$.dst = $3;
+    }
+    | AT_R1 ',' 'a' {
+        $$.src_type = Operand::REGADDR;
+        $$.dst_type = Operand::REG_A;
+    }
+    | AT_R1 ',' R0    { ARN_RN_NOT_SUPPORTED(1, 0); }
+    | AT_R1 ',' R1    { ARN_RN_NOT_SUPPORTED(1, 1); }
+    | AT_R1 ',' R2    { ARN_RN_NOT_SUPPORTED(1, 2); }
+    | AT_R1 ',' R3    { ARN_RN_NOT_SUPPORTED(1, 3); }
+    | AT_R1 ',' AT_R0 { ARN_ARN_NOT_SUPPORTED(1, 0); }
+    | AT_R1 ',' AT_R1 { ARN_ARN_NOT_SUPPORTED(1, 1); }
+    | AT_R1 ',' AT_R2 { ARN_ARN_NOT_SUPPORTED(1, 2); }
+    | AT_R1 ',' AT_R3 { ARN_ARN_NOT_SUPPORTED(1, 3); }
+    | AT_R1 ',' '#' expression {
+        $$.src_type = Operand::REGADDR;
+        $$.dst_type = Operand::IMMED;
+        $$.dst = $4;
+    }
+    | AT_R1 ',' expression {
+        $$.src_type = Operand::REGADDR;
+        $$.dst_type = Operand::MEMADDR;
+        $$.dst = $3;
+    }
+    | AT_R2 ',' 'a' {
+        $$.src_type = Operand::REGADDR;
+        $$.dst_type = Operand::REG_A;
+    }
+    | AT_R2 ',' R0    { ARN_RN_NOT_SUPPORTED(2, 0); }
+    | AT_R2 ',' R1    { ARN_RN_NOT_SUPPORTED(2, 1); }
+    | AT_R2 ',' R2    { ARN_RN_NOT_SUPPORTED(2, 2); }
+    | AT_R2 ',' R3    { ARN_RN_NOT_SUPPORTED(2, 3); }
+    | AT_R2 ',' AT_R0 { ARN_ARN_NOT_SUPPORTED(2, 0); }
+    | AT_R2 ',' AT_R1 { ARN_ARN_NOT_SUPPORTED(2, 1); }
+    | AT_R2 ',' AT_R2 { ARN_ARN_NOT_SUPPORTED(2, 2); }
+    | AT_R2 ',' AT_R3 { ARN_ARN_NOT_SUPPORTED(2, 3); }
+    | AT_R2 ',' '#' expression {
+        $$.src_type = Operand::REGADDR;
+        $$.dst_type = Operand::IMMED;
+        $$.dst = $4;
+    }
+    | AT_R2 ',' expression {
+        $$.src_type = Operand::REGADDR;
+        $$.dst_type = Operand::MEMADDR;
+        $$.dst = $3;
+    }
+    | AT_R3 ',' 'a' {
+        $$.src_type = Operand::REGADDR;
+        $$.dst_type = Operand::REG_A;
+    }
+    | AT_R3 ',' R0    { ARN_RN_NOT_SUPPORTED(3, 0); }
+    | AT_R3 ',' R1    { ARN_RN_NOT_SUPPORTED(3, 1); }
+    | AT_R3 ',' R2    { ARN_RN_NOT_SUPPORTED(3, 2); }
+    | AT_R3 ',' R3    { ARN_RN_NOT_SUPPORTED(3, 3); }
+    | AT_R3 ',' AT_R0 { ARN_ARN_NOT_SUPPORTED(3, 0); }
+    | AT_R3 ',' AT_R1 { ARN_ARN_NOT_SUPPORTED(3, 1); }
+    | AT_R3 ',' AT_R2 { ARN_ARN_NOT_SUPPORTED(3, 2); }
+    | AT_R3 ',' AT_R3 { ARN_ARN_NOT_SUPPORTED(3, 3); }
+    | AT_R3 ',' '#' expression {
+        $$.src_type = Operand::REGADDR;
+        $$.dst_type = Operand::IMMED;
+        $$.dst = $4;
+    }
+    | AT_R3 ',' expression {
+        $$.src_type = Operand::REGADDR;
+        $$.dst_type = Operand::MEMADDR;
+        $$.dst = $3;
+    }
+    | '#' expression ',' 'a' {
+        $$.src_type = Operand::IMMED;
+        $$.dst_type = Operand::REG_A;
+        $$.src = $2;
+    }
+    | '#' expression ',' R0 {
+        $$.src_type = Operand::IMMED;
+        $$.dst_type = Operand::REG;
+        $$.src = $2;
+    }
+    | '#' expression ',' R1 {
+        $$.src_type = Operand::IMMED;
+        $$.dst_type = Operand::REG;
+        $$.src = $2;
+    }
+    | '#' expression ',' R2 {
+        $$.src_type = Operand::IMMED;
+        $$.dst_type = Operand::REG;
+        $$.src = $2;
+    }
+    | '#' expression ',' R3 {
+        $$.src_type = Operand::IMMED;
+        $$.dst_type = Operand::REG;
+        $$.src = $2;
+    }
+    | '#' expression ',' AT_R0 {
+        $$.src_type = Operand::IMMED;
+        $$.dst_type = Operand::REGADDR;
+        $$.src = $2;
+    }
+    | '#' expression ',' AT_R1 {
+        $$.src_type = Operand::IMMED;
+        $$.dst_type = Operand::REGADDR;
+        $$.src = $2;
+    }
+    | '#' expression ',' AT_R2 {
+        $$.src_type = Operand::IMMED;
+        $$.dst_type = Operand::REGADDR;
+        $$.src = $2;
+    }
+    | '#' expression ',' AT_R3 {
+        $$.src_type = Operand::IMMED;
+        $$.dst_type = Operand::REGADDR;
+        $$.src = $2;
+    }
+    | '#' expression ',' '#' expression {
+        $$.src_type = Operand::IMMED;
+        $$.dst_type = Operand::IMMED;
+        $$.src = $2;
+        $$.dst = $5;
+    }
+    | '#' expression ',' expression {
+        $$.src_type = Operand::IMMED;
+        $$.dst_type = Operand::MEMADDR;
+        $$.src = $2;
+        $$.dst = $4;
+    }
+    | expression ',' 'a' {
+        $$.src_type = Operand::MEMADDR;
+        $$.dst_type = Operand::REG_A;
+        $$.src = $1;
+    }
+    | expression ',' R0 {
+        $$.src_type = Operand::MEMADDR;
+        $$.dst_type = Operand::REG;
+        $$.src = $1;
+    }
+    | expression ',' R1 {
+        $$.src_type = Operand::MEMADDR;
+        $$.dst_type = Operand::REG;
+        $$.src = $1;
+    }
+    | expression ',' R2 {
+        $$.src_type = Operand::MEMADDR;
+        $$.dst_type = Operand::REG;
+        $$.src = $1;
+    }
+    | expression ',' R3 {
+        $$.src_type = Operand::MEMADDR;
+        $$.dst_type = Operand::REG;
+        $$.src = $1;
+    }
+    | expression ',' AT_R0 {
+        $$.src_type = Operand::MEMADDR;
+        $$.dst_type = Operand::REGADDR;
+        $$.src = $1;
+    }
+    | expression ',' AT_R1 {
+        $$.src_type = Operand::MEMADDR;
+        $$.dst_type = Operand::REGADDR;
+        $$.src = $1;
+    }
+    | expression ',' AT_R2 {
+        $$.src_type = Operand::MEMADDR;
+        $$.dst_type = Operand::REGADDR;
+        $$.src = $1;
+    }
+    | expression ',' AT_R3 {
+        $$.src_type = Operand::MEMADDR;
+        $$.dst_type = Operand::REGADDR;
+        $$.src = $1;
+    }
+    | expression ',' '#' expression {
+        $$.src_type = Operand::MEMADDR;
+        $$.dst_type = Operand::IMMED;
+        $$.src = $1;
+        $$.dst = $4;
+    }
+    | expression ',' expression {
+        $$.src_type = Operand::MEMADDR;
+        $$.dst_type = Operand::MEMADDR;
+        $$.src = $1;
+        $$.dst = $3;
+    }
+;
+
+expression
+    : NUMBER
+    | IDENTIFIER {
+        try {
+            $$ = get_const($1);
+        } catch (const ConstNotFound &) {
+            yyerror("constant not found");
+            YYERROR;
+        }
+        free($1);
+    }
+    | expression '+' expression      { $$ = $1 + $3; }
+    | expression '-' expression      { $$ = $1 - $3; }
+    | expression '*' expression      { $$ = $1 * $3; }
+    | expression '/' expression      { $$ = $1 / $3; }
+    | expression '%' expression      { $$ = $1 % $3; }
+    | expression '<' expression      { $$ = $1 << $3; }
+    | expression '>' expression      { $$ = $1 >> $3; }
+    | expression '^' expression      { $$ = $1 ^ $3; }
+    | expression '&' expression      { $$ = $1 & $3; }
+    | expression '|' expression      { $$ = $1 | $3; }
+    | '!' expression                 { $$ = ~$2; }
+    | '+' expression   %prec UNPOS   { $$ = +$2; }
+    | '-' expression   %prec UNNEG   { $$ = -$2; }
+    | '(' expression ')'             { $$ = $2; }
+;

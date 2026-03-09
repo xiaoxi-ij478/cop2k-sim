@@ -10,25 +10,33 @@ extern FILE *yyin;
 
 void yyerror(const char *s)
 {
-    std::cerr << "grammar error at line " << yylineno << ": " << s << std::endl;
+    std::cerr << "syntax error at line " << yylineno << ": " << s << std::endl;
 }
 %}
 
 %union {
     int number_v;
     char *identifier_v;
-    Operands operand_v;
+    struct {
+        Operand src, dst;
+    } operand_v;
     InstructionYacc instruction_v;
     Signals signals_v;
-    Signal signal_v;
+    struct {
+        char *name;
+        bool val;
+    } signal_v;
     MicroProgram microprogram_v;
-    MicroProgramSignal microprogramsignal_v;
+    struct {
+        unsigned index;
+        Signals signal;
+    } microprogramsignal_v;
 }
 
 %token                         OPERAND_REG_A OPERAND_MEMADDR OPERAND_REG OPERAND_IMMED OPERAND_REGADDR
 %token <identifier_v>          IDENTIFIER
 %token <number_v>              NUMBER
-%token                         BLANK
+%token                         BLANK JUMP_ON_ZERO_MARKER JUMP_ON_CARRY_MARKER
 
 %type <operand_v>              operand
 %type <instruction_v>          instruction
@@ -50,12 +58,174 @@ instructions
 
 instruction
     : IDENTIFIER operand '@' NUMBER ':' micro_program ';' {
+        /* special cases detection:
+         * _FATCH_ MUST be at address 0x0
+         * _INT_ MUST be at address 0xB8
+         * DB, ORG, END, IF, ELSE and ENDIF are special instructions
+         * and must not be defined
+         */
+        if (!strcasecmp($1, "_FATCH_") && $4 != 0x0) {
+            yyerror("_FATCH_ instruction address != 0x0");
+            YYERROR;
+        }
+        if (!strcasecmp($1, "_INT_") && $4 != 0xB8) {
+            yyerror("_INT_ instruction address != 0xB8");
+            YYERROR;
+        }
+        if (!strcasecmp($1, "DB")) {
+            yyerror("DB must not be defined");
+            YYERROR;
+        }
+        if (!strcasecmp($1, "ORG")) {
+            yyerror("DB must not be defined");
+            YYERROR;
+        }
+        if (!strcasecmp($1, "END")) {
+            yyerror("DB must not be defined");
+            YYERROR;
+        }
+        if (!strcasecmp($1, "IF")) {
+            yyerror("IF must not be defined");
+            YYERROR;
+        }
+        if (!strcasecmp($1, "ELSE")) {
+            yyerror("ELSE must not be defined");
+            YYERROR;
+        }
+        if (!strcasecmp($1, "ENDIF")) {
+            yyerror("ENDIF must not be defined");
+            YYERROR;
+        }
         if ($4 > 255) {
             yyerror("instruction address > 255");
             YYERROR;
         }
         if ($4 & 3) {
             yyerror("instruction address not aligned to 4 bit");
+            YYERROR;
+        }
+        $$.byte = $4;
+        $$.mnemonic = $1;
+        $$.src = $2.src;
+        $$.dst = $2.dst;
+        $$.microprogram = $6;
+    }
+    | IDENTIFIER operand '@' NUMBER JUMP_ON_ZERO_MARKER ':' micro_program ';' {
+        /* special cases detection:
+         * this instruction's address bit index 3 MUST == 0 AND
+         * address bit index 2 MUST == 1
+         * _FATCH_ MUST be at address 0x0
+         * _INT_ MUST be at address 0xB8
+         * DB, ORG, END, IF, ELSE and ENDIF are special instructions
+         * and must not be defined
+         */
+        if (!strcasecmp($1, "_FATCH_") && $4 != 0x0) {
+            yyerror("_FATCH_ instruction address != 0x0");
+            YYERROR;
+        }
+        if (!strcasecmp($1, "_INT_") && $4 != 0xB8) {
+            yyerror("_INT_ instruction address != 0xB8");
+            YYERROR;
+        }
+        if (!strcasecmp($1, "DB")) {
+            yyerror("DB must not be defined");
+            YYERROR;
+        }
+        if (!strcasecmp($1, "ORG")) {
+            yyerror("DB must not be defined");
+            YYERROR;
+        }
+        if (!strcasecmp($1, "END")) {
+            yyerror("DB must not be defined");
+            YYERROR;
+        }
+        if (!strcasecmp($1, "IF")) {
+            yyerror("IF must not be defined");
+            YYERROR;
+        }
+        if (!strcasecmp($1, "ELSE")) {
+            yyerror("ELSE must not be defined");
+            YYERROR;
+        }
+        if (!strcasecmp($1, "ENDIF")) {
+            yyerror("ENDIF must not be defined");
+            YYERROR;
+        }
+        if ($4 > 255) {
+            yyerror("instruction address > 255");
+            YYERROR;
+        }
+        if ($4 & 3) {
+            yyerror("instruction address not aligned to 4 bit");
+            YYERROR;
+        }
+        if ($4 & (1 << 3) || !($4 & (1 << 2))) {
+            yyerror(
+                "to utilize jump on zero feature,\n"
+                "address bit index 3 must == 0 and address bit index 2 must == 1"
+            );
+            YYERROR;
+        }
+        $$.byte = $4;
+        $$.mnemonic = $1;
+        $$.src = $2.src;
+        $$.dst = $2.dst;
+        $$.microprogram = $6;
+    }
+    | IDENTIFIER operand '@' NUMBER JUMP_ON_CARRY_MARKER ':' micro_program ';' {
+        /* special cases detection:
+         * this instruction's address bit index 3 MUST == 0 AND
+         * address bit index 2 MUST == 0
+         * _FATCH_ MUST be at address 0x0
+         * _INT_ MUST be at address 0xB8
+         * DB, ORG, END, IF, ELSE and ENDIF are special instructions
+         * and must not be defined
+         */
+        if (!strcasecmp($1, "_FATCH_") && $4 != 0x0) {
+            yyerror("_FATCH_ instruction address != 0x0");
+            YYERROR;
+        }
+        if (!strcasecmp($1, "_INT_") && $4 != 0xB8) {
+            yyerror("_INT_ instruction address != 0xB8");
+            YYERROR;
+        }
+        if (!strcasecmp($1, "DB")) {
+            yyerror("DB must not be defined");
+            YYERROR;
+        }
+        if (!strcasecmp($1, "ORG")) {
+            yyerror("DB must not be defined");
+            YYERROR;
+        }
+        if (!strcasecmp($1, "END")) {
+            yyerror("DB must not be defined");
+            YYERROR;
+        }
+        if (!strcasecmp($1, "IF")) {
+            yyerror("IF must not be defined");
+            YYERROR;
+        }
+        if (!strcasecmp($1, "ELSE")) {
+            yyerror("ELSE must not be defined");
+            YYERROR;
+        }
+        if (!strcasecmp($1, "ENDIF")) {
+            yyerror("ENDIF must not be defined");
+            YYERROR;
+        }
+        if ($4 > 255) {
+            yyerror("instruction address > 255");
+            YYERROR;
+        }
+        if ($4 & 3) {
+            yyerror("instruction address not aligned to 4 bit");
+            YYERROR;
+        }
+        if ($4 & (1 << 3) || $4 & (1 << 2)) {
+            yyerror(
+                "to utilize jump on carry feature,\n"
+                "address bit index 3 must == 0 and address bit index 2 must == 0"
+            );
             YYERROR;
         }
         $$.byte = $4;
@@ -97,8 +267,8 @@ operand
         $$.dst = Operand::NONE;
     }
     | OPERAND_REG_A ',' OPERAND_REG_A {
-        yyerror("xxx A, A is meaningless");
-        YYERROR;
+        $$.src = Operand::REG_A;
+        $$.dst = Operand::REG_A;
     }
     | OPERAND_REG_A ',' OPERAND_REG {
         $$.src = Operand::REG_A;
@@ -293,6 +463,11 @@ signals
         else if (!strcasecmp($1.name, "s0"))
             $$.s0 = $1.val;
 
+        else {
+            yyerror("Invalid register name");
+            YYERROR;
+        }
+
         free($1.name);
         $1.name = nullptr;
     }
@@ -367,6 +542,11 @@ signals
 
         else if (!strcasecmp($2.name, "s0"))
             $$.s0 = $2.val;
+
+        else {
+            yyerror("Invalid register name");
+            YYERROR;
+        }
 
         free($2.name);
         $2.name = nullptr;

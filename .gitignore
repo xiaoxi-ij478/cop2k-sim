@@ -1,10 +1,11 @@
 *.depend
 *.layout
+*.parser.hpp
 *.parser.h
 *.parser.cpp
 *.parser.c
-*.scanner.c
 *.scanner.cpp
+*.scanner.c
 *.tab.cpp
 *.tab.c
 *.yy.c

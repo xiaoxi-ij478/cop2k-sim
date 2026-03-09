@@ -13,11 +13,15 @@ unsigned instruction_numbers = 0;
 
 void clear_instruction_set(void)
 {
-    for (unsigned i=0;i<instruction_numbers;i++) {
+    for (unsigned i = 0; i < instruction_numbers; i++) {
         instructions[i].byte = 0;
         instructions[i].mnemonic.clear();
         instructions[i].src = instructions[i].dst = Operand::NONE;
-        std::memset(&instructions[i].microprogram, 1, sizeof(instructions[i].microprogram));
+        std::memset(
+            &instructions[i].microprogram,
+            1,
+            sizeof(instructions[i].microprogram)
+        );
     }
 
     instruction_numbers = 0;
@@ -56,7 +60,6 @@ int main(int argc, char **argv)
 
     parse_instruction_file(instr_file);
 
-    for (unsigned i=0;i<instruction_numbers;i++) {
-
+    for (unsigned i = 0; i < instruction_numbers; i++) {
     }
 }

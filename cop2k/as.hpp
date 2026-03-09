@@ -3,10 +3,16 @@
 
 #include <cstdio>
 #include <stdexcept>
+#include <stack>
 
-class ParseFailure : public std::runtime_error
+class ParseFailure : public std::logic_error
 {
-        using std::runtime_error::runtime_error;
+        using std::logic_error::logic_error;
+};
+
+class ConstNotFound : public std::logic_error
+{
+        using std::logic_error::logic_error;
 };
 
 enum class Operand : unsigned char {
@@ -28,26 +34,24 @@ struct MicroProgram {
     Signals signal[4];
 };
 
-struct Operands {
-    Operand src, dst;
-};
-
-struct Signal {
-    char *name;
-    bool val;
-};
-
-struct MicroProgramSignal {
-    unsigned index;
-    struct Signals signal;
-};
-
 // we can't use fancy classes in Yacc's structs
 struct InstructionYacc {
     unsigned char byte;
     char *mnemonic;
     Operand src, dst;
     MicroProgram microprogram;
+};
+
+struct AsmInstructionOperandYacc {
+    Operand src_type, dst_type;
+    /*
+     * for R?, R<arg>;
+     * for @R? == R?;
+     * for #II, arg == II;
+     * for MM, arg == MM;
+     * for A, arg is ignored
+     */
+    unsigned src, dst;
 };
 
 struct Instruction {
@@ -66,7 +70,7 @@ struct Instruction {
         microprogram(other.microprogram)
     {}
 
-    Instruction& operator=(const struct InstructionYacc &other)
+    Instruction &operator=(const struct InstructionYacc &other)
     {
         byte = other.byte;
         mnemonic = other.mnemonic;
@@ -82,6 +86,12 @@ extern unsigned instruction_numbers;
 
 void clear_instruction_set(void);
 void add_to_instruction_set(const struct InstructionYacc &instruction);
+void add_instruction(
+    const char *mnemonic,
+    const struct AsmInstructionOperandYacc &operand
+);
+int get_const(const char *name);
+void set_const(const char *name, int val);
 void parse_instruction_file(FILE *in);
 
 #endif // AS_HPP_INCLUDED
