@@ -539,8 +539,9 @@ expression
         } catch (const ConstNotFound &) {
             yyerror("constant not found");
             YYERROR;
+        } finally {
+            free($1);
         }
-        free($1);
     }
     | expression '+' expression      { $$ = $1 + $3; }
     | expression '-' expression      { $$ = $1 - $3; }
