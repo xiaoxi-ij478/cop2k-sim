@@ -618,3 +618,10 @@ expression
 ;
 
 %%
+void assembly(FILE *in)
+{
+    yyin = in;
+
+    if (yyparse())
+        throw AssemblyFailure("failed to assemble file");
+}
