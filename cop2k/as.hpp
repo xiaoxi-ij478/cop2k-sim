@@ -15,6 +15,11 @@ class ConstNotFound : public std::logic_error
         using std::logic_error::logic_error;
 };
 
+class AssemblyFailure : public std::logic_error
+{
+        using std::logic_error::logic_error;
+};
+
 enum class Operand : unsigned char {
     NONE,
     REG_A,
@@ -93,5 +98,6 @@ void add_instruction(
 int get_const(const char *name);
 void set_const(const char *name, int val);
 void parse_instruction_file(FILE *in);
+void assembly(FILE *in);
 
 #endif // AS_HPP_INCLUDED
