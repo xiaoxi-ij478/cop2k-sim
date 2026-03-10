@@ -1,12 +1,13 @@
 %{
 #include <iostream>
 #include <stack>
+#include <cstring>
 
 #include "as.hpp"
 
-extern int yylex(void);
-extern int yylineno;
-extern FILE *yyin;
+extern int yyasmlex(void);
+extern int yyasmlineno;
+extern FILE *yyasmin;
 
 static std::stack<bool> block_status;
 
@@ -42,12 +43,12 @@ static bool no_block() { return block_status.empty(); }
 
 void yyerror(const char *s)
 {
-    std::cerr << "syntax error at line " << yylineno << ": " << s << std::endl;
+    std::cerr << "syntax error at line " << yyasmlineno << ": " << s << std::endl;
 }
 %}
 
 %union {
-    int number_v;
+    unsigned char number_v;
     char *identifier_v;
     struct {
         char *mnemonic;
@@ -96,24 +97,32 @@ instruction
         $$.mnemonic = $1;
         $$.operand = $2;
     }
+    | IDENTIFIER EQU expression '\n' {
+        $$.mnemonic = strdup("const");
+        $$.operand.src_type = Operand::IMMED;
+        $$.operand.dst_type = Operand::NONE;
+        $$.operand.src = $3;
+
+        set_const($1, $3);
+    }
     | DB expression '\n' {
-        $$.mnemonic = "db";
+        $$.mnemonic = strdup("db");
         $$.operand.src_type = Operand::MEMADDR;
         $$.operand.dst_type = Operand::NONE;
         $$.operand.src = $2;
     }
     | ORG expression '\n' {
-        $$.mnemonic = "org";
+        $$.mnemonic = strdup("org");
         $$.operand.src_type = Operand::MEMADDR;
         $$.operand.dst_type = Operand::NONE;
         $$.operand.src = $2;
     }
     | END '\n' {
-        $$.mnemonic = "end";
+        $$.mnemonic = strdup("end");
         $$.operand.src_type = $$.operand.dst_type = Operand::NONE;
     }
     | IF expression '\n' {
-        $$.mnemonic = "if";
+        $$.mnemonic = strdup("if");
         $$.operand.src_type = Operand::IMMED;
         $$.operand.dst_type = Operand::NONE;
         $$.operand.src = $2;
@@ -121,7 +130,7 @@ instruction
         push_block($2);
     }
     | ELSE '\n' {
-        $$.mnemonic = "else";
+        $$.mnemonic = strdup("else");
         $$.operand.src_type = $$.operand.dst_type = Operand::NONE;
 
         if (no_block()) {
@@ -134,7 +143,7 @@ instruction
         push_block(n);
     }
     | ENDIF '\n' {
-        $$.mnemonic = "endif";
+        $$.mnemonic = strdup("endif");
         $$.operand.src_type = $$.operand.dst_type = Operand::NONE;
 
         if (no_block()) {
@@ -599,7 +608,7 @@ expression
     | IDENTIFIER {
         try {
             $$ = get_const($1);
-        } catch (const ConstNotFound &) {
+        } catch (const std::out_of_range &) {
             free($1);
             yyerror("constant not found");
             YYERROR;
@@ -624,9 +633,10 @@ expression
 ;
 
 %%
+
 void assembly(FILE *in)
 {
-    yyin = in;
+    yyasmin = in;
 
     if (yyparse())
         throw AssemblyFailure("failed to assemble file");

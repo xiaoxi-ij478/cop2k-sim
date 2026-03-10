@@ -1,5 +1,6 @@
 %{
 #include <iostream>
+#include <cstring>
 
 #include "as.hpp"
 #include "instr.parser.hpp"
@@ -20,21 +21,21 @@
 "jump-on-carry"      { return JUMP_ON_CARRY_MARKER; }
 
 [A-Z_][A-Z0-9._]* {
-    yylval.identifier_v = strdup(yytext);
+    yyinstrlval.identifier_v = strdup(yyinstrtext);
     BEGIN(OPERAND_STATE);
     return IDENTIFIER;
 }
 
 ";"                             { BEGIN(INITIAL); return ';'; }
-[!,:@]                          { return yytext[0]; }
-[1-9][0-9]*|0x[0-9a-f]+|0[0-7]* { yylval.number_v = strtol(yytext, nullptr, 0); return NUMBER; }
-"#"[^\n]*                       |
+[!,:@]                          { return yyinstrtext[0]; }
+[1-9][0-9]*|0x[0-9a-f]+|0[0-7]* { yyinstrlval.number_v = strtol(yyinstrtext, nullptr, 0); return NUMBER; }
+"//"[^\n]*                      |
 [\t\n\r\v ]+                    ; // ignore
 
 . {
     std::cerr << "error: invalid character '"
-        << yytext << "' at line "
-        << yylineno << "." << std::endl;
+        << yyinstrtext << "' at line "
+        << yyinstrlineno << "." << std::endl;
     yyterminate();
 }
 

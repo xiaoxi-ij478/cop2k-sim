@@ -4,18 +4,18 @@
 
 #include "as.hpp"
 
-extern int yylex(void);
-extern int yylineno;
-extern FILE *yyin;
+extern int yyinstrlex(void);
+extern int yyinstrlineno;
+extern FILE *yyinstrin;
 
 void yyerror(const char *s)
 {
-    std::cerr << "syntax error at line " << yylineno << ": " << s << std::endl;
+    std::cerr << "syntax error at line " << yyinstrlineno << ": " << s << std::endl;
 }
 %}
 
 %union {
-    int number_v;
+    unsigned char number_v;
     char *identifier_v;
     struct {
         Operand src, dst;
@@ -77,11 +77,11 @@ instruction
             YYERROR;
         }
         if (!strcasecmp($1, "ORG")) {
-            yyerror("DB must not be defined");
+            yyerror("ORG must not be defined");
             YYERROR;
         }
         if (!strcasecmp($1, "END")) {
-            yyerror("DB must not be defined");
+            yyerror("END must not be defined");
             YYERROR;
         }
         if (!strcasecmp($1, "IF")) {
@@ -94,10 +94,6 @@ instruction
         }
         if (!strcasecmp($1, "ENDIF")) {
             yyerror("ENDIF must not be defined");
-            YYERROR;
-        }
-        if ($4 > 255) {
-            yyerror("instruction address > 255");
             YYERROR;
         }
         if ($4 & 3) {
@@ -131,11 +127,11 @@ instruction
             YYERROR;
         }
         if (!strcasecmp($1, "ORG")) {
-            yyerror("DB must not be defined");
+            yyerror("ORG must not be defined");
             YYERROR;
         }
         if (!strcasecmp($1, "END")) {
-            yyerror("DB must not be defined");
+            yyerror("END must not be defined");
             YYERROR;
         }
         if (!strcasecmp($1, "IF")) {
@@ -148,10 +144,6 @@ instruction
         }
         if (!strcasecmp($1, "ENDIF")) {
             yyerror("ENDIF must not be defined");
-            YYERROR;
-        }
-        if ($4 > 255) {
-            yyerror("instruction address > 255");
             YYERROR;
         }
         if ($4 & 3) {
@@ -168,7 +160,7 @@ instruction
         $$.mnemonic = $1;
         $$.src = $2.src;
         $$.dst = $2.dst;
-        $$.microprogram = $6;
+        $$.microprogram = $7;
     }
     | IDENTIFIER operand '@' NUMBER JUMP_ON_CARRY_MARKER ':' micro_program ';' {
         /* special cases detection:
@@ -191,11 +183,11 @@ instruction
             YYERROR;
         }
         if (!strcasecmp($1, "ORG")) {
-            yyerror("DB must not be defined");
+            yyerror("ORG must not be defined");
             YYERROR;
         }
         if (!strcasecmp($1, "END")) {
-            yyerror("DB must not be defined");
+            yyerror("END must not be defined");
             YYERROR;
         }
         if (!strcasecmp($1, "IF")) {
@@ -208,10 +200,6 @@ instruction
         }
         if (!strcasecmp($1, "ENDIF")) {
             yyerror("ENDIF must not be defined");
-            YYERROR;
-        }
-        if ($4 > 255) {
-            yyerror("instruction address > 255");
             YYERROR;
         }
         if ($4 & 3) {
@@ -228,7 +216,7 @@ instruction
         $$.mnemonic = $1;
         $$.src = $2.src;
         $$.dst = $2.dst;
-        $$.microprogram = $6;
+        $$.microprogram = $7;
     }
     | error ';' {
         // error messages has been printed by their perspective rules
@@ -460,7 +448,7 @@ signals
             $$.s0 = $1.val;
 
         else {
-            yyerror("Invalid register name");
+            yyerror("Invalid signal name");
             YYERROR;
         }
 
@@ -540,7 +528,7 @@ signals
             $$.s0 = $2.val;
 
         else {
-            yyerror("Invalid register name");
+            yyerror("Invalid signal name");
             YYERROR;
         }
 
@@ -561,9 +549,10 @@ signal
 ;
 
 %%
+
 void parse_instruction_file(FILE *in)
 {
-    yyin = in;
+    yyinstrin = in;
     if (yyparse())
         throw ParseFailure("failed to parse file");
 }

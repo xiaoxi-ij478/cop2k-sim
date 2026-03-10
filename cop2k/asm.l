@@ -29,12 +29,12 @@
 "endif"               { return ENDIF; }
 
 [A-Z_][A-Z0-9_.]* {
-    yylval.identifier_v = strdup(yytext);
+    yyasmlval.identifier_v = strdup(yytext);
     BEGIN(OPERAND_STATE);
     return IDENTIFIER;
 }
 
-"#" | // comment
+"#" | // number prefix
 ":" | // label definer
 "," | // operand separator
 [!*/+^&|<>%()-] { // operators
@@ -42,23 +42,23 @@
      * because @ is only used in register memory addressing
      * and it may not appear anywhere else
      */
-    return yytext[0];
+    return yyasmtext[0];
 }
 
-([1-9][0-9]*|0x[0-9a-f]+|0[0-7]*|0b[01]+)   {
-    yylval.number_v = strtol(yytext, nullptr, 0);
+[1-9][0-9]*|0x[0-9a-f]+|0[0-7]*|0b[01]+ {
+    yyasmlval.number_v = strtol(yyasmtext, nullptr, 0);
     return NUMBER;
 }
 [0-7]+o {
-    yylval.number_v = strtol(yytext, nullptr, 8);
+    yyasmlval.number_v = strtol(yyasmtext, nullptr, 8);
     return NUMBER;
 }
 [0-9a-f]+h {
-    yylval.number_v = strtol(yytext, nullptr, 16);
+    yyasmlval.number_v = strtol(yyasmtext, nullptr, 16);
     return NUMBER;
 }
 [01]+b {
-    yylval.number_v = strtol(yytext, nullptr, 2);
+    yyasmlval.number_v = strtol(yyasmtext, nullptr, 2);
     return NUMBER;
 }
 
@@ -68,8 +68,8 @@
 
 . {
     std::cerr << "error: invalid character '"
-        << yytext << "' at line "
-        << yylineno << "." << std::endl;
+        << yyasmtext << "' at line "
+        << yyasmlineno << "." << std::endl;
     yyterminate();
 }
 

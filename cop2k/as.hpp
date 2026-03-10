@@ -10,11 +10,6 @@ class ParseFailure : public std::logic_error
         using std::logic_error::logic_error;
 };
 
-class ConstNotFound : public std::logic_error
-{
-        using std::logic_error::logic_error;
-};
-
 class AssemblyFailure : public std::logic_error
 {
         using std::logic_error::logic_error;
@@ -56,7 +51,7 @@ struct AsmInstructionOperandYacc {
      * for MM, arg == MM;
      * for A, arg is ignored
      */
-    unsigned src, dst;
+    unsigned char src, dst;
 };
 
 struct Instruction {

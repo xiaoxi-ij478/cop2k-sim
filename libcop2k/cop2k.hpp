@@ -434,7 +434,7 @@ namespace COP2K
     class COP2K
     {
         public:
-            constexpr COP2K()
+            COP2K()
             {
                 a.set_callback([this](RegisterWithCallback &) {
                     update_alu();
@@ -780,8 +780,8 @@ namespace COP2K
                         break;
 
                     case ABusWriterType::PC:
+                        // it may be subsequently overwritten by !ELP
                         abus.set_data(pc.get());
-                        // it may be subsequently overwritten by ELP
                         pc.set(pc.get() + 1);
                         break;
                 }
@@ -926,25 +926,22 @@ namespace COP2K
                             break;
                     }
 
-                bool upc_set = false;
-
                 for (IBusReaderType i : ibus.get_reader())
                     switch (i) {
                         case IBusReaderType::NONE:
+                            upc.set(upc.get() + 1);
                             break;
 
                         case IBusReaderType::IR:
                             ir.set(ibus.get_data());
+                            sa.set(ibus.get_data() & (1 << 0));
+                            sb.set(ibus.get_data() & (1 << 1));
                             break;
 
                         case IBusReaderType::UPC:
-                            upc_set = true;
-                            upc.set(ibus.get_data());
+                            um.set_addr(ibus.get_data() & ~0x3);
                             break;
                     }
-
-                if (!upc_set)
-                    upc.set(upc.get() + 1);
             }
 
             ALU alu;
