@@ -112,8 +112,7 @@ instruction
     }
     | IDENTIFIER operand '@' NUMBER JUMP_ON_ZERO_MARKER ':' micro_program ';' {
         /* special cases detection:
-         * this instruction's address bit index 3 MUST == 0 AND
-         * address bit index 2 MUST == 1
+         * this instruction's address & 0xC MUST == 1
          * _FATCH_ MUST be at address 0x0
          * _INT_ MUST be at address 0xB8
          * DB, ORG, END, IF, ELSE and ENDIF are special instructions
@@ -159,10 +158,9 @@ instruction
             yyerror("instruction address not aligned to 4 bit");
             YYERROR;
         }
-        if ($4 & (1 << 3) || !($4 & (1 << 2))) {
+        if ($4 & 0xC != 1) {
             yyerror(
-                "to utilize jump on zero feature,\n"
-                "address bit index 3 must == 0 and address bit index 2 must == 1"
+                "to utilize jump on zero feature, address & 0xC MUST == 1"
             );
             YYERROR;
         }
@@ -174,8 +172,7 @@ instruction
     }
     | IDENTIFIER operand '@' NUMBER JUMP_ON_CARRY_MARKER ':' micro_program ';' {
         /* special cases detection:
-         * this instruction's address bit index 3 MUST == 0 AND
-         * address bit index 2 MUST == 0
+         * this instruction's address & 0xC MUST == 0
          * _FATCH_ MUST be at address 0x0
          * _INT_ MUST be at address 0xB8
          * DB, ORG, END, IF, ELSE and ENDIF are special instructions
@@ -221,10 +218,9 @@ instruction
             yyerror("instruction address not aligned to 4 bit");
             YYERROR;
         }
-        if ($4 & (1 << 3) || $4 & (1 << 2)) {
+        if ($4 & 0xC != 0) {
             yyerror(
-                "to utilize jump on carry feature,\n"
-                "address bit index 3 must == 0 and address bit index 2 must == 0"
+                "to utilize jump on carry feature, address & 0xC MUST == 0"
             );
             YYERROR;
         }
