@@ -80,7 +80,9 @@ void yyerror(const char *s)
 program
     : // none
     | program instruction {
-        add_instruction($2.mnemonic, $2.operand);
+        if (block_active())
+            add_instruction($2.mnemonic, $2.operand);
+
         free($2.mnemonic);
         $2.mnemonic = nullptr;
     }
@@ -91,46 +93,50 @@ instruction
        /* we must not use fixed mnemonic set
         * because instruction set is not fixed */
     {
-        if (block_active()) {
-            $$.mnemonic = $1;
-            $$.operand = $2;
-        }
+        $$.mnemonic = $1;
+        $$.operand = $2;
     }
     | DB expression '\n' {
-        if (block_active()) {
-            $$.mnemonic = "db";
-            $$.operand.src_type = Operand::MEMADDR;
-            $$.operand.dst_type = Operand::NONE;
-            $$.operand.src = $2;
-        }
+        $$.mnemonic = "db";
+        $$.operand.src_type = Operand::MEMADDR;
+        $$.operand.dst_type = Operand::NONE;
+        $$.operand.src = $2;
     }
     | ORG expression '\n' {
-        if (block_active()) {
-            $$.mnemonic = "org";
-            $$.operand.src_type = Operand::MEMADDR;
-            $$.operand.dst_type = Operand::NONE;
-            $$.operand.src = $2;
-        }
+        $$.mnemonic = "org";
+        $$.operand.src_type = Operand::MEMADDR;
+        $$.operand.dst_type = Operand::NONE;
+        $$.operand.src = $2;
     }
     | END '\n' {
-        if (block_active()) {
-            $$.mnemonic = "end";
-            $$.operand.src_type = $$.operand.dst_type = Operand::NONE;
-        }
+        $$.mnemonic = "end";
+        $$.operand.src_type = $$.operand.dst_type = Operand::NONE;
     }
     | IF expression '\n' {
+        $$.mnemonic = "if";
+        $$.operand.src_type = Operand::IMMED;
+        $$.operand.dst_type = Operand::NONE;
+        $$.operand.src = $2;
+
         push_block($2);
     }
     | ELSE '\n' {
+        $$.mnemonic = "else";
+        $$.operand.src_type = $$.operand.dst_type = Operand::NONE;
+
         if (no_block()) {
             yyerror("'else' with no corresponding 'if'");
             YYABORT;
         }
+
         bool n = !top_block();
         pop_block();
         push_block(n);
     }
     | ENDIF '\n' {
+        $$.mnemonic = "endif";
+        $$.operand.src_type = $$.operand.dst_type = Operand::NONE;
+
         if (no_block()) {
             yyerror("'endif' with no corresponding 'if'");
             YYABORT;
