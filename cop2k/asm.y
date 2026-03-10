@@ -14,6 +14,7 @@ static bool block_active() { return block_status.empty() || block_status.top(); 
 static void push_block(bool val) { block_status.push(val); }
 static void pop_block() { block_status.pop(); }
 static bool top_block() { return block_status.top(); }
+static bool no_block() { return block_status.empty(); }
 
 #define RN_RN_NOT_SUPPORTED(a, b) \
     do { \
@@ -121,11 +122,19 @@ instruction
         push_block($2);
     }
     | ELSE '\n' {
+        if (no_block()) {
+            yyerror("'else' with no corresponding 'if'");
+            YYABORT;
+        }
         bool n = !top_block();
         pop_block();
         push_block(n);
     }
     | ENDIF '\n' {
+        if (no_block()) {
+            yyerror("'endif' with no corresponding 'if'");
+            YYABORT;
+        }
         pop_block();
     }
     | error '\n' {
@@ -537,11 +546,12 @@ expression
         try {
             $$ = get_const($1);
         } catch (const ConstNotFound &) {
+            free($1);
             yyerror("constant not found");
             YYERROR;
-        } finally {
-            free($1);
         }
+
+        free($1);
     }
     | expression '+' expression      { $$ = $1 + $3; }
     | expression '-' expression      { $$ = $1 - $3; }
