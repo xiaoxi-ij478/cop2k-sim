@@ -134,6 +134,9 @@ instruction
         $$.operand.src_type = $$.operand.dst_type = Operand::NONE;
 
         if (no_block()) {
+            free($$.mnemonic);
+            $$.mnemonic = nullptr;
+
             yyerror("'else' with no corresponding 'if'");
             YYABORT;
         }
@@ -147,9 +150,13 @@ instruction
         $$.operand.src_type = $$.operand.dst_type = Operand::NONE;
 
         if (no_block()) {
+            free($$.mnemonic);
+            $$.mnemonic = nullptr;
+
             yyerror("'endif' with no corresponding 'if'");
             YYABORT;
         }
+
         pop_block();
     }
     | error '\n' {
