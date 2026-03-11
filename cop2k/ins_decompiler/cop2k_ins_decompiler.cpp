@@ -6,6 +6,7 @@
 #include <bitset>
 #include <sstream>
 #include <iomanip>
+#include <format>
 #include <endian.h>
 
 enum class Operand : unsigned char {
@@ -125,11 +126,7 @@ int main(int argc, char **argv)
                 break;
         }
 
-        std::cout << " @ " <<
-                  std::showbase << std::hex << std::setw(2) <<
-                  (i << 2) <<
-                  std::dec << std::noshowbase << std::setw(0) <<
-                  ": ";
+        std::cout << std::format(" @ 0x{:02X}: ", i << 2);
 
         if (!instr[i].desc.empty())
             std::cout << "// " << instr[i].desc;
@@ -137,9 +134,9 @@ int main(int argc, char **argv)
         std::cout << std::endl;
 
         for (unsigned j = i << 2; j < (i << 2) + 4; j++) {
-                std::cout << "    " << j - (i << 2) << ": ";
+            std::ostringstream oss;
 #define GET_BIT(pos, name) \
-    if (!um[j].test(23 - pos)) std::cout << "!" #name " "
+    if (!um[j].test(23 - pos)) oss << "!" #name " "
             GET_BIT(22, emwr);
             GET_BIT(21, emrd);
             GET_BIT(20, pcoe);
@@ -164,8 +161,13 @@ int main(int argc, char **argv)
             GET_BIT(1, s1);
             GET_BIT(0, s0);
 #undef GET_BIT
-            std::cout << std::endl;
+
+            if (!oss.str().empty())
+                std::cout << "    " << j - (i << 2) << ": "
+                          << oss.str()
+                          << std::endl;
         }
+
         std::cout << ';' << std::endl;
     }
 }

@@ -10,20 +10,10 @@
 #include <tuple>
 #include <vector>
 
+#include "libopcode.hpp"
+
 namespace COP2K
 {
-    class BusConflict : public std::logic_error
-    {
-        public:
-            BusConflict() : std::logic_error("this bus already has a writer") {}
-    };
-
-    class BusNoWriter : public std::logic_error
-    {
-        public:
-            BusNoWriter() : std::logic_error("this bus has no writer") {}
-    };
-
     class Register
     {
         public:
@@ -257,7 +247,7 @@ namespace COP2K
             constexpr void set_writer(WriterType val)
             {
                 if (has_writer())
-                    throw BusConflict();
+                    throw std::logic_error("this bus already has a writer");
 
                 writer = val;
             }
@@ -280,7 +270,7 @@ namespace COP2K
             constexpr uint8_t get_data() const
             {
                 if (!has_writer())
-                    throw BusNoWriter();
+                    throw std::logic_error("this bus has no writer");
 
                 return data;
             }
@@ -288,7 +278,7 @@ namespace COP2K
             constexpr void set_data(uint8_t val)
             {
                 if (!has_writer())
-                    throw BusNoWriter();
+                    throw std::logic_error("this bus has no writer");
 
                 data = val;
             }
@@ -515,14 +505,14 @@ namespace COP2K
                 modify_bus_data();
             }
 
+            constexpr void run_instruction()
+            {
+
+            }
+
             constexpr void trigger_interrupt()
             {
                 ireq.pos();
-            }
-
-            constexpr void set_dbus_manual_input(uint8_t val)
-            {
-                manual_dbus_input.set(val);
             }
 
             constexpr void pos_fen()
@@ -613,7 +603,6 @@ namespace COP2K
             Flag x2, x1, x0;
             Flag wen, aen;
             FlagWithCallback s2, s1, s0;
-
 
         private:
             constexpr void update_alu()
@@ -941,7 +930,7 @@ namespace COP2K
 
                         case IBusReaderType::UPC:
                             upc_modify = true;
-                            upc.set(ibus.get_data & ~0x3);
+                            upc.set(ibus.get_data() & ~0x3);
                             um.set_addr(upc.get());
                             break;
                     }

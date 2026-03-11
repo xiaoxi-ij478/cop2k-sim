@@ -1,50 +1,41 @@
-// test comment
-_FATCH_  @ 0x0:
+_FATCH_ @ 0x0: // 实验机占用，不可修改。复位后，所有寄存器清0，首先执行 _FATCH_ 指令取指
     0: !emrd !pcoe !iren
 ;
 ADD A, R? @ 0x10:
     0: !rrd !wen
-    1: !fen !x1 !x0 !aen !s2 !s1 !s0
-    2: !emrd !pcoe !iren
+    1: !emrd !pcoe !iren !fen !x1 !x0 !aen !s2 !s1 !s0
 ;
 ADD A, @R? @ 0x14:
     0: !maren !rrd
     1: !emrd !emen !maroe !wen
-    2: !fen !x1 !x0 !aen !s2 !s1 !s0
-    3: !emrd !pcoe !iren
+    2: !emrd !pcoe !iren !fen !x1 !x0 !aen !s2 !s1 !s0
 ;
 ADD A, MM @ 0x18:
     0: !emrd !pcoe !emen !maren
     1: !emrd !emen !maroe !wen
-    2: !fen !x1 !x0 !aen !s2 !s1 !s0
-    3: !emrd !pcoe !iren
+    2: !emrd !pcoe !iren !fen !x1 !x0 !aen !s2 !s1 !s0
 ;
 ADD A, #II @ 0x1c:
     0: !emrd !pcoe !emen !wen
-    1: !fen !x1 !x0 !aen !s2 !s1 !s0
-    2: !emrd !pcoe !iren
+    1: !emrd !pcoe !iren !fen !x1 !x0 !aen !s2 !s1 !s0
 ;
 ADDC A, R? @ 0x20:
     0: !rrd !wen
-    1: !fen !x1 !x0 !aen !s1 !s0
-    2: !emrd !pcoe !iren
+    1: !emrd !pcoe !iren !fen !x1 !x0 !aen !s1 !s0
 ;
 ADDC A, @R? @ 0x24:
     0: !maren !rrd
     1: !emrd !emen !maroe !wen
-    2: !fen !x1 !x0 !aen !s1 !s0
-    3: !emrd !pcoe !iren
+    2: !emrd !pcoe !iren !fen !x1 !x0 !aen !s1 !s0
 ;
 ADDC A, MM @ 0x28:
     0: !emrd !pcoe !emen !maren
     1: !emrd !emen !maroe !wen
-    2: !fen !x1 !x0 !aen !s1 !s0
-    3: !emrd !pcoe !iren
+    2: !emrd !pcoe !iren !fen !x1 !x0 !aen !s1 !s0
 ;
 ADDC A, #II @ 0x2c:
     0: !emrd !pcoe !emen !wen
-    1: !fen !x1 !x0 !aen !s1 !s0
-    2: !emrd !pcoe !iren
+    1: !emrd !pcoe !iren !fen !x1 !x0 !aen !s1 !s0
 ;
 SUB A, R? @ 0x30:
     0: !rrd !wen
@@ -54,41 +45,34 @@ SUB A, R? @ 0x30:
 SUB A, @R? @ 0x34:
     0: !maren !rrd
     1: !emrd !emen !maroe !wen
-    2: !fen !x1 !x0 !aen !s2 !s1
-    3: !emrd !pcoe !iren
+    2: !emrd !pcoe !iren !fen !x1 !x0 !aen !s2 !s1
 ;
 SUB A, MM @ 0x38:
     0: !emrd !pcoe !emen !maren
     1: !emrd !emen !maroe !wen
-    2: !fen !x1 !x0 !aen !s2 !s1
-    3: !emrd !pcoe !iren
+    2: !emrd !pcoe !iren !fen !x1 !x0 !aen !s2 !s1
 ;
 SUB A, #II @ 0x3c:
     0: !emrd !pcoe !emen !wen
-    1: !fen !x1 !x0 !aen !s2 !s1
-    2: !emrd !pcoe !iren
+    1: !emrd !pcoe !iren !fen !x1 !x0 !aen !s2 !s1
 ;
 SUBC A, R? @ 0x40:
     0: !rrd !wen
-    1: !fen !x1 !x0 !aen !s1
-    2: !emrd !pcoe !iren
+    1: !emrd !pcoe !iren !fen !x1 !x0 !aen !s1
 ;
 SUBC A, @R? @ 0x44:
     0: !maren !rrd
     1: !emrd !emen !maroe !wen
-    2: !fen !x1 !x0 !aen !s1
-    3: !emrd !pcoe !iren
+    2: !emrd !pcoe !iren !fen !x1 !x0 !aen !s1
 ;
 SUBC A, MM @ 0x48:
     0: !emrd !pcoe !emen !maren
     1: !emrd !emen !maroe !wen
-    2: !fen !x1 !x0 !aen !s1
-    3: !emrd !pcoe !iren
+    2: !emrd !pcoe !iren !fen !x1 !x0 !aen !s1
 ;
 SUBC A, #II @ 0x4c:
     0: !emrd !pcoe !emen !wen
-    1: !fen !x1 !x0 !aen !s1
-    2: !emrd !pcoe !iren
+    1: !emrd !pcoe !iren !fen !x1 !x0 !aen !s1
 ;
 AND A, R? @ 0x50:
     0: !rrd !wen
@@ -98,36 +82,30 @@ AND A, R? @ 0x50:
 AND A, @R? @ 0x54:
     0: !maren !rrd
     1: !emrd !emen !maroe !wen
-    2: !fen !x1 !x0 !aen !s2
-    3: !emrd !pcoe !iren
+    2: !emrd !pcoe !iren !fen !x1 !x0 !aen !s2
 ;
 AND A, MM @ 0x58:
     0: !emrd !pcoe !emen !maren
     1: !emrd !emen !maroe !wen
-    2: !fen !x1 !x0 !aen !s2
-    3: !emrd !pcoe !iren
+    2: !emrd !pcoe !iren !fen !x1 !x0 !aen !s2
 ;
 AND A, #II @ 0x5c:
     0: !emrd !pcoe !emen !wen
-    1: !fen !x1 !x0 !aen !s2
-    2: !emrd !pcoe !iren
+    1: !emrd !pcoe !iren !fen !x1 !x0 !aen !s2
 ;
 OR A, R? @ 0x60:
     0: !rrd !wen
-    1: !fen !x1 !x0 !aen !s2 !s0
-    2: !emrd !pcoe !iren
+    1: !emrd !pcoe !iren !fen !x1 !x0 !aen !s2 !s0
 ;
 OR A, @R? @ 0x64:
     0: !maren !rrd
     1: !emrd !emen !maroe !wen
-    2: !fen !x1 !x0 !aen !s2 !s0
-    3: !emrd !pcoe !iren
+    2: !emrd !pcoe !iren !fen !x1 !x0 !aen !s2 !s0
 ;
 OR A, MM @ 0x68:
     0: !emrd !pcoe !emen !maren
     1: !emrd !emen !maroe !wen
-    2: !fen !x1 !x0 !aen !s2 !s0
-    3: !emrd !pcoe !iren
+    2: !emrd !pcoe !iren !fen !x1 !x0 !aen !s2 !s0
 ;
 OR A, #II @ 0x6c:
     0: !emrd !pcoe !emen !wen
@@ -135,8 +113,7 @@ OR A, #II @ 0x6c:
     2: !emrd !pcoe !iren
 ;
 MOV A, R? @ 0x70:
-    0: !rrd !aen
-    1: !emrd !pcoe !iren
+    0: !emrd !pcoe !iren !rrd !aen
 ;
 MOV A, @R? @ 0x74:
     0: !maren !rrd
@@ -153,8 +130,7 @@ MOV A, #II @ 0x7c:
     1: !emrd !pcoe !iren
 ;
 MOV R?, A @ 0x80:
-    0: !rwr !x1 !x0
-    1: !emrd !pcoe !iren
+    0: !emrd !pcoe !iren !rwr !x1 !x0
 ;
 MOV @R?, A @ 0x84:
     0: !maren !rrd
@@ -192,7 +168,7 @@ JMP MM @ 0xac:
     0: !emrd !pcoe !emen !elp
     1: !emrd !pcoe !iren
 ;
-_INT_  @ 0xb8:
+_INT_ @ 0xb8: // 实验机占用，不可修改。进入中断时，实验机硬件产生 _INT_ 指令
     0: !sten !x2
     1: !elp !x2 !x1
     2: !emrd !pcoe !iren
@@ -203,42 +179,35 @@ CALL MM @ 0xbc:
     2: !emrd !emen !elp !maroe
     3: !emrd !pcoe !iren
 ;
-IN  @ 0xc0:
-    0: !x2 !x1 !x0 !aen
-    1: !emrd !pcoe !iren
+IN @ 0xc0:
+    0: !emrd !pcoe !iren !x2 !x1 !x0 !aen
 ;
-OUT  @ 0xc4:
-    0: !outen !x1 !x0
-    1: !emrd !pcoe !iren
+OUT @ 0xc4:
+    0: !emrd !pcoe !iren !outen !x1 !x0
 ;
-RET  @ 0xcc:
+RET @ 0xcc:
     0: !elp !x2 !x0
     1: !emrd !pcoe !iren
 ;
 RR A @ 0xd0:
-    0: !cn !fen !x1 !aen
-    1: !emrd !pcoe !iren
+    0: !emrd !pcoe !iren !cn !fen !x1 !aen
 ;
 RL A @ 0xd4:
-    0: !cn !fen !x0 !aen
-    1: !emrd !pcoe !iren
+    0: !emrd !pcoe !iren !cn !fen !x0 !aen
 ;
 RRC A @ 0xd8:
-    0: !fen !x1 !aen
-    1: !emrd !pcoe !iren
+    0: !emrd !pcoe !iren !fen !x1 !aen
 ;
 RLC A @ 0xdc:
-    0: !fen !x0 !aen
-    1: !emrd !pcoe !iren
+    0: !emrd !pcoe !iren !fen !x0 !aen
 ;
-NOP  @ 0xe0:
+NOP @ 0xe0:
     0: !emrd !pcoe !iren
 ;
 CPL A @ 0xe4:
-    0: !fen !x1 !x0 !aen !s0
-    1: !emrd !pcoe !iren
+    0: !emrd !pcoe !iren !fen !x1 !x0 !aen !s0
 ;
-RETI  @ 0xec:
+RETI @ 0xec:
     0: !eint !elp !x2 !x0
     1: !emrd !pcoe !iren
 ;

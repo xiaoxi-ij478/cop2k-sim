@@ -1,0 +1,20 @@
+_FATCH_ @ 0x0: // 实验机占用，不可修改。复位后，所有寄存器清0，首先执行 _FATCH_ 指令取指
+    0: !emrd !pcoe !iren
+;
+LD A, #II @ 0x4:
+    0: !emrd !pcoe !emen !aen
+    1: !emrd !pcoe !iren
+;
+ADD A, #II @ 0x8:
+    0: !emrd !pcoe !emen !wen
+    1: !emrd !pcoe !iren !x1 !x0 !aen !s2 !s1 !s0
+;
+GOTO MM @ 0xc:
+    0: !emrd !pcoe !emen !elp
+    1: !emrd !pcoe !iren
+;
+OUTA @ 0x10:
+    0: !emrd !pcoe !iren !outen !x1 !x0
+;
+_INT_ @ 0xb8: // 实验机占用，不可修改。进入中断时，实验机硬件产生 _INT_ 指令
+;

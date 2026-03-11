@@ -103,50 +103,38 @@
 		<Linker>
 			<Add library="cop2k" />
 		</Linker>
-		<Unit filename="as.cpp">
+		<Unit filename="as/as.cpp">
 			<Option target="AS Debug" />
 			<Option target="AS Release" />
 		</Unit>
-		<Unit filename="as.hpp">
+		<Unit filename="as/as.hpp">
 			<Option target="AS Debug" />
 			<Option target="AS Release" />
 		</Unit>
-		<Unit filename="asm.l">
+		<Unit filename="as/asm.l">
 			<Option compile="1" />
 			<Option compiler="gcc" use="1" buildCommand="flex -Pyyasm -o$file_dir/$file_name.scanner.cpp $file" />
 			<Option target="AS Debug" />
 			<Option target="AS Release" />
 		</Unit>
-		<Unit filename="asm.y">
+		<Unit filename="as/asm.y">
 			<Option compile="1" />
-			<Option compiler="gcc" use="1" buildCommand="bison -v -d $file -pyyasm -o $file_dir/$file_name.parser.cpp" />
+			<Option compiler="gcc" use="1" buildCommand="bison -v -pyyasm -d $file -o $file_dir/$file_name.parser.cpp" />
 			<Option target="AS Debug" />
 			<Option target="AS Release" />
 		</Unit>
-		<Unit filename="cli.cpp">
+		<Unit filename="cli/cli.cpp">
 			<Option target="CLI Debug" />
 			<Option target="CLI Release" />
 		</Unit>
-		<Unit filename="cli.hpp">
+		<Unit filename="cli/cli.hpp">
 			<Option target="CLI Debug" />
 			<Option target="CLI Release" />
 		</Unit>
-		<Unit filename="cop2k_ins_decompiler.cpp">
+		<Unit filename="ins_decompiler/cop2k_ins_decompiler.cpp">
 			<Option target="cop2k_ins_decompiler" />
 		</Unit>
-		<Unit filename="instr.l">
-			<Option compile="1" />
-			<Option compiler="gcc" use="1" buildCommand="flex -Pyyinstr -o$file_dir/$file_name.scanner.cpp $file" />
-			<Option target="AS Debug" />
-			<Option target="AS Release" />
-		</Unit>
-		<Unit filename="instr.y">
-			<Option compile="1" />
-			<Option compiler="gcc" use="1" buildCommand="bison -v -d $file -pyyinstr -o $file_dir/$file_name.parser.cpp" />
-			<Option target="AS Debug" />
-			<Option target="AS Release" />
-		</Unit>
-		<Unit filename="vm.cpp">
+		<Unit filename="vm/vm.cpp">
 			<Option target="VM Debug" />
 			<Option target="VM Release" />
 		</Unit>

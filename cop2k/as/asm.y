@@ -2,6 +2,7 @@
 #include <iostream>
 #include <stack>
 #include <cstring>
+#include <functional>
 
 #include "as.hpp"
 
@@ -10,6 +11,7 @@ extern int yyasmlineno;
 extern FILE *yyasmin;
 
 static std::stack<bool> block_status;
+static std::reference_wrapper<COP2K::AS> current_as;
 
 static bool block_active() { return block_status.empty() || block_status.top(); }
 static void push_block(bool val) { block_status.push(val); }
@@ -641,7 +643,7 @@ expression
 
 %%
 
-void assembly(FILE *in)
+void COP2K::assembly(FILE *in, AS &as)
 {
     yyasmin = in;
 

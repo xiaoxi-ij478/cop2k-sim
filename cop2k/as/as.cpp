@@ -8,8 +8,6 @@
 
 #include "cop2k.hpp"
 #include "as.hpp"
-#include "asm.parser.hpp"
-#include "instr.parser.hpp"
 
 Instruction instructions[256 >> 2];
 unsigned instruction_numbers = 0;
@@ -39,40 +37,14 @@ void add_instruction(
     const struct AsmInstructionOperandYacc &operand
 )
 {
-    for (const Instruction &i : instructions) {
-        if (
-            i.mnemonic != mnemonic ||
-            i.src != operand.src_type ||
-            i.dst != operand.dst_type
-        )
-            continue;
-
-        unsigned char instr_byte = i.byte;
-
-        if (i.src == Operand::REG || i.src == Operand::REGADDR)
-            instr_byte |= operand.src;
-
-        else if (i.dst == Operand::REG || i.dst == Operand::REGADDR)
-            instr_byte |= operand.dst;
-
-        em.set_data_at(em_pos++, instr_byte);
-
-        if (i.src == Operand::MEMADDR || i.src == Operand::IMMED)
-            em.set_data_at(em_pos++, operand.src);
-
-        if (i.dst == Operand::MEMADDR || i.dst == Operand::IMMED)
-            em.set_data_at(em_pos++, operand.dst);
-
-        return;
-    }
 }
 
-int get_const(const char *name)
+unsigned char get_const(const char *name)
 {
     return consts.at(name);
 }
 
-void set_const(const char *name, int val)
+void set_const(const char *name, unsigned char val)
 {
     consts.emplace(name, val);
 }

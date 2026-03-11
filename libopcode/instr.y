@@ -1,17 +1,72 @@
 %{
-#include <cstring>
 #include <iostream>
+#include <functional>
 
-#include "as.hpp"
+#include "libopcode.hpp"
 
 extern int yyinstrlex(void);
 extern int yyinstrlineno;
 extern FILE *yyinstrin;
 
+static std::reference_wrapper<COP2K::Opcode> current_opcode;
+
 void yyerror(const char *s)
 {
     std::cerr << "syntax error at line " << yyinstrlineno << ": " << s << std::endl;
 }
+
+struct Signals {
+    bool s0, s1, s2, aen, wen, x0, x1, x2, fen, cn, rwr, rrd, sten, outen,
+         maroe, maren, elp, eint, iren, emen, pcoe, emrd, emwr;
+
+    void clear() {
+        s0 = s1 = s2 = aen = wen = x0 = x1 = x2 = fen = cn = rwr = rrd = sten =
+        outen = maroe = maren = elp = eint = iren = emen = pcoe = emrd = emwr = true;
+    }
+
+    std::bitset<24> to_bitset()
+    {
+        return std::bitset<24>(
+            (s0    << 0)  |
+            (s1    << 1)  |
+            (s2    << 2)  |
+            (aaen  << 3)  |
+            (wen   << 4)  |
+            (x0    << 5)  |
+            (x1    << 6)  |
+            (x2    << 7)  |
+            (fen   << 8)  |
+            (cn    << 9)  |
+            (rwr   << 10) |
+            (rrd   << 11) |
+            (sten  << 12) |
+            (outen << 13) |
+            (maroe << 14) |
+            (maren << 15) |
+            (elp   << 16) |
+            (eint  << 17) |
+            (iren  << 18) |
+            (emen  << 19) |
+            (pcoe  << 20) |
+            (emrd  << 21) |
+            (emwr  << 22) |
+            (0     << 23)
+        );
+    }
+};
+
+struct MicroProgram {
+    unsigned char signal_count;
+    struct Signals signals[4];
+
+    void clear() {
+        signal_count = 0;
+
+        for (struct Signals &i : signals)
+            i.clear();
+    }
+
+};
 %}
 
 %union {
@@ -20,17 +75,22 @@ void yyerror(const char *s)
     struct {
         Operand src, dst;
     } operand_v;
-    InstructionYacc instruction_v;
-    Signals signals_v;
+    struct {
+        unsigned char byte;
+        char *mnemonic;
+        Operand src, dst;
+        struct MicroProgram microprogram;
+    } instruction_v;
+    struct Signals signals_v;
     struct {
         char *name;
         bool val;
     } signal_v;
-    MicroProgram microprogram_v;
     struct {
         unsigned index;
-        Signals signal;
+        struct Signals signal;
     } microprogramsignal_v;
+    struct MicroProgram microprogram_v;
 }
 
 %token                         OPERAND_REG_A OPERAND_MEMADDR OPERAND_REG OPERAND_IMMED OPERAND_REGADDR
@@ -50,7 +110,11 @@ void yyerror(const char *s)
 instructions
     : // none
     | instructions instruction {
-        add_to_instruction_set($2);
+        std::array<std::bitset<24>, 4> arr;
+        while ($2.signal_count--)
+            arr.at($2.signal_count) = $2.microprogram[$2.signal_count].to_bitset();
+
+        current_opcode.get().add($2.byte, $2.mnemonic, $2.src, $2.dst, arr);
         free($2.mnemonic);
         $2.mnemonic = nullptr;
     }
@@ -151,9 +215,7 @@ instruction
             YYERROR;
         }
         if ($4 & 0xC != 1) {
-            yyerror(
-                "to utilize jump on zero feature, address & 0xC MUST == 1"
-            );
+            yyerror("to utilize jump on zero feature, address & 0xC MUST == 1");
             YYERROR;
         }
         $$.byte = $4;
@@ -207,9 +269,7 @@ instruction
             YYERROR;
         }
         if ($4 & 0xC != 0) {
-            yyerror(
-                "to utilize jump on carry feature, address & 0xC MUST == 0"
-            );
+            yyerror("to utilize jump on carry feature, address & 0xC MUST == 0");
             YYERROR;
         }
         $$.byte = $4;
@@ -226,8 +286,7 @@ instruction
 ;
 
 operand
-    : // nothing, i.e. mnemonic only
-    {
+    : { // nothing, i.e. mnemonic only
         $$.src = $$.dst = Operand::NONE;
     }
     | OPERAND_REG_A {
@@ -354,10 +413,23 @@ operand
 
 micro_program
     : micro_program_signal {
+        $$.clear();
+
+        if ($$.signal_count++ != $1.index) {
+            yyerror("micro program index not continous");
+            YYERROR;
+        }
+
         $$.signal[$1.index] = $1.signal;
     }
     | micro_program micro_program_signal {
         $$ = $1;
+
+        if ($$.signal_count++ != $2.index) {
+            yyerror("micro program index not continous");
+            YYERROR;
+        }
+
         $$.signal[$2.index] = $2.signal;
     }
 ;
@@ -376,7 +448,7 @@ micro_program_signal
 
 signals
     : signal {
-        std::memset(&$$, 1, sizeof($$));
+        $$.clear();
 
         if (!strcasecmp($1.name, "emwr"))
             $$.emwr = $1.val;
@@ -550,9 +622,11 @@ signal
 
 %%
 
-void parse_instruction_file(FILE *in)
+void COP2K::parse_instruction_file(FILE *in, Opcode &opcode)
 {
     yyinstrin = in;
+    current_opcode = std::ref(opcode);
+
     if (yyparse())
-        throw ParseFailure("failed to parse file");
+        throw std::logic_error("failed to parse file");
 }
