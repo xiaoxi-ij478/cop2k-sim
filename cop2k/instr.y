@@ -36,7 +36,7 @@ void yyerror(const char *s)
 %token                         OPERAND_REG_A OPERAND_MEMADDR OPERAND_REG OPERAND_IMMED OPERAND_REGADDR
 %token <identifier_v>          IDENTIFIER
 %token <number_v>              NUMBER
-%token                         BLANK JUMP_ON_ZERO_MARKER JUMP_ON_CARRY_MARKER
+%token                         JUMP_ON_ZERO_MARKER JUMP_ON_CARRY_MARKER
 
 %type <operand_v>              operand
 %type <instruction_v>          instruction
