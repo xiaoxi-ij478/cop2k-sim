@@ -2,7 +2,8 @@
 #include <iostream>
 #include <cstring>
 
-#include "as.hpp"
+#include "libopcode.hpp"
+#include "libopcode_yacc.hpp"
 #include "instr.parser.hpp"
 %}
 

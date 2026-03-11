@@ -3,82 +3,30 @@
 #include <functional>
 
 #include "libopcode.hpp"
+#include "libopcode_yacc.hpp"
 
 extern int yyinstrlex(void);
 extern int yyinstrlineno;
 extern FILE *yyinstrin;
 
-static std::reference_wrapper<COP2K::Opcode> current_opcode;
+static COP2K::Opcode *current_opcode = nullptr;
 
 void yyerror(const char *s)
 {
     std::cerr << "syntax error at line " << yyinstrlineno << ": " << s << std::endl;
 }
-
-struct Signals {
-    bool s0, s1, s2, aen, wen, x0, x1, x2, fen, cn, rwr, rrd, sten, outen,
-         maroe, maren, elp, eint, iren, emen, pcoe, emrd, emwr;
-
-    void clear() {
-        s0 = s1 = s2 = aen = wen = x0 = x1 = x2 = fen = cn = rwr = rrd = sten =
-        outen = maroe = maren = elp = eint = iren = emen = pcoe = emrd = emwr = true;
-    }
-
-    std::bitset<24> to_bitset()
-    {
-        return std::bitset<24>(
-            (s0    << 0)  |
-            (s1    << 1)  |
-            (s2    << 2)  |
-            (aaen  << 3)  |
-            (wen   << 4)  |
-            (x0    << 5)  |
-            (x1    << 6)  |
-            (x2    << 7)  |
-            (fen   << 8)  |
-            (cn    << 9)  |
-            (rwr   << 10) |
-            (rrd   << 11) |
-            (sten  << 12) |
-            (outen << 13) |
-            (maroe << 14) |
-            (maren << 15) |
-            (elp   << 16) |
-            (eint  << 17) |
-            (iren  << 18) |
-            (emen  << 19) |
-            (pcoe  << 20) |
-            (emrd  << 21) |
-            (emwr  << 22) |
-            (0     << 23)
-        );
-    }
-};
-
-struct MicroProgram {
-    unsigned char signal_count;
-    struct Signals signals[4];
-
-    void clear() {
-        signal_count = 0;
-
-        for (struct Signals &i : signals)
-            i.clear();
-    }
-
-};
 %}
 
 %union {
     unsigned char number_v;
     char *identifier_v;
     struct {
-        Operand src, dst;
+        COP2K::Operand src, dst;
     } operand_v;
     struct {
         unsigned char byte;
         char *mnemonic;
-        Operand src, dst;
+        COP2K::Operand src, dst;
         struct MicroProgram microprogram;
     } instruction_v;
     struct Signals signals_v;
@@ -111,10 +59,11 @@ instructions
     : // none
     | instructions instruction {
         std::array<std::bitset<24>, 4> arr;
-        while ($2.signal_count--)
-            arr.at($2.signal_count) = $2.microprogram[$2.signal_count].to_bitset();
+        while ($2.microprogram.signal_count--)
+            arr.at($2.microprogram.signal_count) =
+                $2.microprogram.signals[$2.microprogram.signal_count].to_bitset();
 
-        current_opcode.get().add($2.byte, $2.mnemonic, $2.src, $2.dst, arr);
+        current_opcode->add($2.byte, $2.mnemonic, "", $2.src, $2.dst, arr);
         free($2.mnemonic);
         $2.mnemonic = nullptr;
     }
@@ -132,8 +81,16 @@ instruction
             yyerror("_FATCH_ instruction address != 0x0");
             YYERROR;
         }
+        if ($4 == 0x0 && strcasecmp($1, "_FATCH_")) {
+            yyerror("instruction @ 0x0 MUST be _FATCH_");
+            YYERROR;
+        }
         if (!strcasecmp($1, "_INT_") && $4 != 0xB8) {
             yyerror("_INT_ instruction address != 0xB8");
+            YYERROR;
+        }
+        if ($4 == 0xB8 && strcasecmp($1, "_INT_")) {
+            yyerror("instruction @ 0xB8 MUST be _INT_");
             YYERROR;
         }
         if (!strcasecmp($1, "DB")) {
@@ -182,8 +139,16 @@ instruction
             yyerror("_FATCH_ instruction address != 0x0");
             YYERROR;
         }
+        if ($4 == 0x0 && strcasecmp($1, "_FATCH_")) {
+            yyerror("instruction @ 0x0 MUST be _FATCH_");
+            YYERROR;
+        }
         if (!strcasecmp($1, "_INT_") && $4 != 0xB8) {
             yyerror("_INT_ instruction address != 0xB8");
+            YYERROR;
+        }
+        if ($4 == 0xB8 && strcasecmp($1, "_INT_")) {
+            yyerror("instruction @ 0xB8 MUST be _INT_");
             YYERROR;
         }
         if (!strcasecmp($1, "DB")) {
@@ -236,8 +201,16 @@ instruction
             yyerror("_FATCH_ instruction address != 0x0");
             YYERROR;
         }
+        if ($4 == 0x0 && strcasecmp($1, "_FATCH_")) {
+            yyerror("instruction @ 0x0 MUST be _FATCH_");
+            YYERROR;
+        }
         if (!strcasecmp($1, "_INT_") && $4 != 0xB8) {
             yyerror("_INT_ instruction address != 0xB8");
+            YYERROR;
+        }
+        if ($4 == 0xB8 && strcasecmp($1, "_INT_")) {
+            yyerror("instruction @ 0xB8 MUST be _INT_");
             YYERROR;
         }
         if (!strcasecmp($1, "DB")) {
@@ -287,51 +260,51 @@ instruction
 
 operand
     : { // nothing, i.e. mnemonic only
-        $$.src = $$.dst = Operand::NONE;
+        $$.src = $$.dst = COP2K::Operand::NONE;
     }
     | OPERAND_REG_A {
-        $$.src = Operand::REG_A;
-        $$.dst = Operand::NONE;
+        $$.src = COP2K::Operand::REG_A;
+        $$.dst = COP2K::Operand::NONE;
     }
     | OPERAND_MEMADDR {
-        $$.src = Operand::MEMADDR;
-        $$.dst = Operand::NONE;
+        $$.src = COP2K::Operand::MEMADDR;
+        $$.dst = COP2K::Operand::NONE;
     }
     | OPERAND_REG {
-        $$.src = Operand::REG;
-        $$.dst = Operand::NONE;
+        $$.src = COP2K::Operand::REG;
+        $$.dst = COP2K::Operand::NONE;
     }
     | OPERAND_IMMED {
-        $$.src = Operand::IMMED;
-        $$.dst = Operand::NONE;
+        $$.src = COP2K::Operand::IMMED;
+        $$.dst = COP2K::Operand::NONE;
     }
     | OPERAND_REGADDR {
-        $$.src = Operand::REGADDR;
-        $$.dst = Operand::NONE;
+        $$.src = COP2K::Operand::REGADDR;
+        $$.dst = COP2K::Operand::NONE;
     }
     | OPERAND_REG_A ',' OPERAND_REG_A {
-        $$.src = Operand::REG_A;
-        $$.dst = Operand::REG_A;
+        $$.src = COP2K::Operand::REG_A;
+        $$.dst = COP2K::Operand::REG_A;
     }
     | OPERAND_REG_A ',' OPERAND_REG {
-        $$.src = Operand::REG_A;
-        $$.dst = Operand::REG;
+        $$.src = COP2K::Operand::REG_A;
+        $$.dst = COP2K::Operand::REG;
     }
     | OPERAND_REG_A ',' OPERAND_REGADDR {
-        $$.src = Operand::REG_A;
-        $$.dst = Operand::REGADDR;
+        $$.src = COP2K::Operand::REG_A;
+        $$.dst = COP2K::Operand::REGADDR;
     }
     | OPERAND_REG_A ',' OPERAND_IMMED {
-        $$.src = Operand::REG_A;
-        $$.dst = Operand::IMMED;
+        $$.src = COP2K::Operand::REG_A;
+        $$.dst = COP2K::Operand::IMMED;
     }
     | OPERAND_REG_A ',' OPERAND_MEMADDR {
-        $$.src = Operand::REG_A;
-        $$.dst = Operand::MEMADDR;
+        $$.src = COP2K::Operand::REG_A;
+        $$.dst = COP2K::Operand::MEMADDR;
     }
     | OPERAND_REG ',' OPERAND_REG_A {
-        $$.src = Operand::REG;
-        $$.dst = Operand::REG_A;
+        $$.src = COP2K::Operand::REG;
+        $$.dst = COP2K::Operand::REG_A;
     }
     | OPERAND_REG ',' OPERAND_REG {
         yyerror("xxx R?, R? cannot be constructed");
@@ -342,16 +315,16 @@ operand
         YYERROR;
     }
     | OPERAND_REG ',' OPERAND_IMMED {
-        $$.src = Operand::REG;
-        $$.dst = Operand::IMMED;
+        $$.src = COP2K::Operand::REG;
+        $$.dst = COP2K::Operand::IMMED;
     }
     | OPERAND_REG ',' OPERAND_MEMADDR {
-        $$.src = Operand::REG;
-        $$.dst = Operand::MEMADDR;
+        $$.src = COP2K::Operand::REG;
+        $$.dst = COP2K::Operand::MEMADDR;
     }
     | OPERAND_REGADDR ',' OPERAND_REG_A {
-        $$.src = Operand::REGADDR;
-        $$.dst = Operand::REG_A;
+        $$.src = COP2K::Operand::REGADDR;
+        $$.dst = COP2K::Operand::REG_A;
     }
     | OPERAND_REGADDR ',' OPERAND_REG {
         yyerror("xxx @R?, R? cannot be constructed");
@@ -362,52 +335,52 @@ operand
         YYERROR;
     }
     | OPERAND_REGADDR ',' OPERAND_IMMED {
-        $$.src = Operand::REGADDR;
-        $$.dst = Operand::IMMED;
+        $$.src = COP2K::Operand::REGADDR;
+        $$.dst = COP2K::Operand::IMMED;
     }
     | OPERAND_REGADDR ',' OPERAND_MEMADDR {
-        $$.src = Operand::REGADDR;
-        $$.dst = Operand::MEMADDR;
+        $$.src = COP2K::Operand::REGADDR;
+        $$.dst = COP2K::Operand::MEMADDR;
     }
     | OPERAND_IMMED ',' OPERAND_REG_A {
-        $$.src = Operand::IMMED;
-        $$.dst = Operand::REG_A;
+        $$.src = COP2K::Operand::IMMED;
+        $$.dst = COP2K::Operand::REG_A;
     }
     | OPERAND_IMMED ',' OPERAND_REG {
-        $$.src = Operand::IMMED;
-        $$.dst = Operand::REG;
+        $$.src = COP2K::Operand::IMMED;
+        $$.dst = COP2K::Operand::REG;
     }
     | OPERAND_IMMED ',' OPERAND_REGADDR {
-        $$.src = Operand::IMMED;
-        $$.dst = Operand::REGADDR;
+        $$.src = COP2K::Operand::IMMED;
+        $$.dst = COP2K::Operand::REGADDR;
     }
     | OPERAND_IMMED ',' OPERAND_IMMED {
-        $$.src = Operand::IMMED;
-        $$.dst = Operand::IMMED;
+        $$.src = COP2K::Operand::IMMED;
+        $$.dst = COP2K::Operand::IMMED;
     }
     | OPERAND_IMMED ',' OPERAND_MEMADDR {
-        $$.src = Operand::IMMED;
-        $$.dst = Operand::MEMADDR;
+        $$.src = COP2K::Operand::IMMED;
+        $$.dst = COP2K::Operand::MEMADDR;
     }
     | OPERAND_MEMADDR ',' OPERAND_REG_A {
-        $$.src = Operand::MEMADDR;
-        $$.dst = Operand::REG_A;
+        $$.src = COP2K::Operand::MEMADDR;
+        $$.dst = COP2K::Operand::REG_A;
     }
     | OPERAND_MEMADDR ',' OPERAND_REG {
-        $$.src = Operand::MEMADDR;
-        $$.dst = Operand::REG;
+        $$.src = COP2K::Operand::MEMADDR;
+        $$.dst = COP2K::Operand::REG;
     }
     | OPERAND_MEMADDR ',' OPERAND_REGADDR {
-        $$.src = Operand::MEMADDR;
-        $$.dst = Operand::REGADDR;
+        $$.src = COP2K::Operand::MEMADDR;
+        $$.dst = COP2K::Operand::REGADDR;
     }
     | OPERAND_MEMADDR ',' OPERAND_IMMED {
-        $$.src = Operand::MEMADDR;
-        $$.dst = Operand::IMMED;
+        $$.src = COP2K::Operand::MEMADDR;
+        $$.dst = COP2K::Operand::IMMED;
     }
     | OPERAND_MEMADDR ',' OPERAND_MEMADDR {
-        $$.src = Operand::MEMADDR;
-        $$.dst = Operand::MEMADDR;
+        $$.src = COP2K::Operand::MEMADDR;
+        $$.dst = COP2K::Operand::MEMADDR;
     }
 ;
 
@@ -420,7 +393,7 @@ micro_program
             YYERROR;
         }
 
-        $$.signal[$1.index] = $1.signal;
+        $$.signals[$1.index] = $1.signal;
     }
     | micro_program micro_program_signal {
         $$ = $1;
@@ -430,7 +403,7 @@ micro_program
             YYERROR;
         }
 
-        $$.signal[$2.index] = $2.signal;
+        $$.signals[$2.index] = $2.signal;
     }
 ;
 
@@ -622,11 +595,16 @@ signal
 
 %%
 
-void COP2K::parse_instruction_file(FILE *in, Opcode &opcode)
+void COP2K::parse_instruction_file(FILE *in, Opcode *opcode)
 {
     yyinstrin = in;
-    current_opcode = std::ref(opcode);
+    current_opcode = opcode;
 
-    if (yyparse())
+    int result = yyparse();
+
+    current_opcode = nullptr;
+
+    if (result)
         throw std::logic_error("failed to parse file");
+
 }

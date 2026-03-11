@@ -95,7 +95,6 @@
 			</Target>
 		</Build>
 		<Compiler>
-			<Add option="-Wall" />
 			<Add option="-std=c++20" />
 			<Add option="-fexceptions" />
 			<Add directory="../libcop2k" />

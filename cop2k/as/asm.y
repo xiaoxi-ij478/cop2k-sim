@@ -11,7 +11,7 @@ extern int yyasmlineno;
 extern FILE *yyasmin;
 
 static std::stack<bool> block_status;
-static std::reference_wrapper<COP2K::AS> current_as;
+static COP2K::AS *current_as = nullptr;
 
 static bool block_active() { return block_status.empty() || block_status.top(); }
 static void push_block(bool val) { block_status.push(val); }
@@ -643,10 +643,15 @@ expression
 
 %%
 
-void COP2K::assembly(FILE *in, AS &as)
+void COP2K::assembly(FILE *in, AS *as)
 {
     yyasmin = in;
+    current_as = as;
 
-    if (yyparse())
+    int result = yyparse();
+
+    current_as = nullptr;
+
+    if (result)
         throw AssemblyFailure("failed to assemble file");
 }

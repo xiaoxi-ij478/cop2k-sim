@@ -6,7 +6,7 @@
 *.parser.c
 *.scanner.cpp
 *.scanner.c
-*.parser.outpt
+*.parser.output
 *.tab.cpp
 *.tab.c
 *.yy.c

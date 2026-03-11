@@ -46,6 +46,7 @@
 		</Unit>
 		<Unit filename="libopcode.cpp" />
 		<Unit filename="libopcode.hpp" />
+		<Unit filename="libopcode_yacc.hpp" />
 		<Extensions>
 			<lib_finder disable_auto="1" />
 		</Extensions>
