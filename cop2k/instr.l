@@ -26,8 +26,8 @@
     return IDENTIFIER;
 }
 
-";"                             { BEGIN(INITIAL); return ';'; }
-[!,:@]                          { return yyinstrtext[0]; }
+"@"                             { BEGIN(INITIAL); return '@'; }
+[!,:;]                          { return yyinstrtext[0]; }
 [1-9][0-9]*|0x[0-9a-f]+|0[0-7]* { yyinstrlval.number_v = strtol(yyinstrtext, nullptr, 0); return NUMBER; }
 "//"[^\n]*                      |
 [\t\n\r\v ]+                    ; // ignore
