@@ -926,10 +926,11 @@ namespace COP2K
                             break;
                     }
 
+                bool upc_modify = false;
+
                 for (IBusReaderType i : ibus.get_reader())
                     switch (i) {
                         case IBusReaderType::NONE:
-                            upc.set(upc.get() + 1);
                             break;
 
                         case IBusReaderType::IR:
@@ -939,9 +940,14 @@ namespace COP2K
                             break;
 
                         case IBusReaderType::UPC:
-                            um.set_addr(ibus.get_data() & ~0x3);
+                            upc_modify = true;
+                            upc.set(ibus.get_data & ~0x3);
+                            um.set_addr(upc.get());
                             break;
                     }
+
+                if (!upc_modify)
+                    upc.set(upc.get() + 1);
             }
 
             ALU alu;
