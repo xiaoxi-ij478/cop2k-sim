@@ -54,6 +54,7 @@ void yyerror(const char *s)
     char *identifier_v;
     struct {
         char *mnemonic;
+        char *label;
         AsmInstructionOperandYacc operand;
     } instruction_v;
     AsmInstructionOperandYacc instruction_operand_v;
@@ -84,10 +85,15 @@ program
     : // none
     | program instruction {
         if (block_active())
-            add_instruction($2.mnemonic, $2.operand);
+            add_instruction($2.mnemonic, $2.label, $2.operand);
 
         free($2.mnemonic);
         $2.mnemonic = nullptr;
+
+        if ($2.label) {
+            free($2.label);
+            $2.label = nullptr;
+        }
     }
 ;
 
@@ -97,34 +103,43 @@ instruction
         * because instruction set is not fixed */
     {
         $$.mnemonic = $1;
+        $$.label = nullptr;
         $$.operand = $2;
     }
+    | IDENTIFIER ':' '\n' {
+        $$.mnemonic = strdup("00label");
+        $$.label = $1;
+        $$.operand.src_type = $$.operand.dst_type = Operand::NONE;
+    }
     | IDENTIFIER EQU expression '\n' {
-        $$.mnemonic = strdup("const");
+        $$.mnemonic = strdup("00const");
+        $$.label = nullptr;
         $$.operand.src_type = Operand::IMMED;
         $$.operand.dst_type = Operand::NONE;
         $$.operand.src = $3;
-
-        set_const($1, $3);
     }
     | DB expression '\n' {
         $$.mnemonic = strdup("db");
+        $$.label = nullptr;
         $$.operand.src_type = Operand::MEMADDR;
         $$.operand.dst_type = Operand::NONE;
         $$.operand.src = $2;
     }
     | ORG expression '\n' {
         $$.mnemonic = strdup("org");
+        $$.label = nullptr;
         $$.operand.src_type = Operand::MEMADDR;
         $$.operand.dst_type = Operand::NONE;
         $$.operand.src = $2;
     }
     | END '\n' {
         $$.mnemonic = strdup("end");
+        $$.label = nullptr;
         $$.operand.src_type = $$.operand.dst_type = Operand::NONE;
     }
     | IF expression '\n' {
         $$.mnemonic = strdup("if");
+        $$.label = nullptr;
         $$.operand.src_type = Operand::IMMED;
         $$.operand.dst_type = Operand::NONE;
         $$.operand.src = $2;
@@ -133,6 +148,7 @@ instruction
     }
     | ELSE '\n' {
         $$.mnemonic = strdup("else");
+        $$.label = nullptr;
         $$.operand.src_type = $$.operand.dst_type = Operand::NONE;
 
         if (no_block()) {
@@ -149,6 +165,7 @@ instruction
     }
     | ENDIF '\n' {
         $$.mnemonic = strdup("endif");
+        $$.label = nullptr;
         $$.operand.src_type = $$.operand.dst_type = Operand::NONE;
 
         if (no_block()) {
