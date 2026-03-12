@@ -44,7 +44,7 @@ void yyerror(const char *s)
 %token                         OPERAND_REG_A OPERAND_MEMADDR OPERAND_REG OPERAND_IMMED OPERAND_REGADDR
 %token <identifier_v>          IDENTIFIER
 %token <number_v>              NUMBER
-%token                         JUMP_ON_ZERO_MARKER JUMP_ON_CARRY_MARKER
+%token                         JUMP_ON_ZERO_MARKER JUMP_ON_CARRY_MARKER JUMP_UNCONDITIONAL_MARKER
 
 %type <operand_v>              operand
 %type <instruction_v>          instruction
@@ -243,6 +243,68 @@ instruction
         }
         if ($4 & 0xC != 0) {
             yyerror("to utilize jump on carry feature, address & 0xC MUST == 0");
+            YYERROR;
+        }
+        $$.byte = $4;
+        $$.mnemonic = $1;
+        $$.src = $2.src;
+        $$.dst = $2.dst;
+        $$.microprogram = $7;
+    }
+    | IDENTIFIER operand '@' NUMBER JUMP_UNCONDITIONAL_MARKER ':' micro_program ';' {
+        /* special cases detection:
+         * this instruction's address & 0xC MUST == 2
+         * _FATCH_ MUST be at address 0x0
+         * _INT_ MUST be at address 0xB8
+         * DB, ORG, END, IF, ELSE and ENDIF are special instructions
+         * and must not be defined
+         */
+        if (!strcasecmp($1, "_FATCH_") && $4 != 0x0) {
+            yyerror("_FATCH_ instruction address != 0x0");
+            YYERROR;
+        }
+        if ($4 == 0x0 && strcasecmp($1, "_FATCH_")) {
+            yyerror("instruction @ 0x0 MUST be _FATCH_");
+            YYERROR;
+        }
+        if (!strcasecmp($1, "_INT_") && $4 != 0xB8) {
+            yyerror("_INT_ instruction address != 0xB8");
+            YYERROR;
+        }
+        if ($4 == 0xB8 && strcasecmp($1, "_INT_")) {
+            yyerror("instruction @ 0xB8 MUST be _INT_");
+            YYERROR;
+        }
+        if (!strcasecmp($1, "DB")) {
+            yyerror("DB must not be defined");
+            YYERROR;
+        }
+        if (!strcasecmp($1, "ORG")) {
+            yyerror("ORG must not be defined");
+            YYERROR;
+        }
+        if (!strcasecmp($1, "END")) {
+            yyerror("END must not be defined");
+            YYERROR;
+        }
+        if (!strcasecmp($1, "IF")) {
+            yyerror("IF must not be defined");
+            YYERROR;
+        }
+        if (!strcasecmp($1, "ELSE")) {
+            yyerror("ELSE must not be defined");
+            YYERROR;
+        }
+        if (!strcasecmp($1, "ENDIF")) {
+            yyerror("ENDIF must not be defined");
+            YYERROR;
+        }
+        if ($4 & 3) {
+            yyerror("instruction address not aligned to 4 bit");
+            YYERROR;
+        }
+        if ($4 & 0xC != 2) {
+            yyerror("to utilize jump unconditionally feature, address & 0xC MUST == 2");
             YYERROR;
         }
         $$.byte = $4;
