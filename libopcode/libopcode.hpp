@@ -31,13 +31,15 @@ namespace COP2K
                 std::string mnemonic;
                 std::string desc;
                 Operand src, dst;
+                unsigned char signal_count;
                 std::array<std::bitset<24>, 4> microprogram;
 
                 Instruction() :
                     exist(false),
                     byte(0),
                     src(Operand::NONE),
-                    dst(Operand::NONE)
+                    dst(Operand::NONE),
+                    signal_count(0)
                 {
                     for (std::bitset<24> &i : microprogram)
                         i.set();
@@ -50,6 +52,7 @@ namespace COP2K
                     mnemonic.clear();
                     desc.clear();
                     src = dst = Operand::NONE;
+                    signal_count = 0;
 
                     for (std::bitset<24> &i : microprogram)
                         i.set();
@@ -71,6 +74,7 @@ namespace COP2K
                 const char *desc,
                 Operand src,
                 Operand dst,
+                unsigned char signal_count,
                 const std::array<std::bitset<24>, 4> &microprogram
             )
             {
@@ -85,6 +89,7 @@ namespace COP2K
                 instructions[byte >> 2].desc = desc;
                 instructions[byte >> 2].src = src;
                 instructions[byte >> 2].dst = dst;
+                instructions[byte >> 2].signal_count = signal_count;
                 instructions[byte >> 2].microprogram = microprogram;
             }
 
