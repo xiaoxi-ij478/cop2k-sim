@@ -78,19 +78,19 @@ namespace COP2K
                 const std::array<std::bitset<24>, 4> &microprogram
             )
             {
-                if (instructions[byte >> 2].exist)
+                if (instructions.at(byte >> 2).exist)
                     throw std::logic_error(
                         std::format("instruction at 0x{:02X} already defined", byte)
                     );
 
-                instructions[byte >> 2].exist = true;
-                instructions[byte >> 2].byte = byte;
-                instructions[byte >> 2].mnemonic = mnemonic;
-                instructions[byte >> 2].desc = desc;
-                instructions[byte >> 2].src = src;
-                instructions[byte >> 2].dst = dst;
-                instructions[byte >> 2].signal_count = signal_count;
-                instructions[byte >> 2].microprogram = microprogram;
+                instructions.at(byte >> 2).exist = true;
+                instructions.at(byte >> 2).byte = byte;
+                instructions.at(byte >> 2).mnemonic = mnemonic;
+                instructions.at(byte >> 2).desc = desc;
+                instructions.at(byte >> 2).src = src;
+                instructions.at(byte >> 2).dst = dst;
+                instructions.at(byte >> 2).signal_count = signal_count;
+                instructions.at(byte >> 2).microprogram = microprogram;
             }
 
             constexpr void load_instr_txt(FILE *in)
@@ -98,12 +98,12 @@ namespace COP2K
                 clear();
                 parse_instruction_file(in, this);
 
-                if (!instructions[0x0].exist)
+                if (!instructions.at(0x0).exist)
                     throw std::logic_error(
                         "instruction @ 0x0 MUST be _FATCH_ with no operands"
                     );
 
-                if (!instructions[0xB8].exist)
+                if (!instructions.at(0xB8).exist)
                     throw std::logic_error(
                         "instruction @ 0xB8 MUST be _INT_ with no operands"
                     );
@@ -142,7 +142,7 @@ namespace COP2K
             }
 
             constexpr void patch_um(uint8_t addr, const std::bitset<24> &val) {
-                Instruction &ins = instructions[addr >> 2];
+                Instruction &ins = instructions.at(addr >> 2);
 
                 if (!ins.exist)
                     throw std::out_of_range(
@@ -159,7 +159,7 @@ namespace COP2K
             }
 
             constexpr void patch_um(uint8_t addr, unsigned bit_pos, bool val) {
-                Instruction &ins = instructions[addr >> 2];
+                Instruction &ins = instructions.at(addr >> 2);
                 if (!ins.exist)
                     throw std::out_of_range(
                         std::format("micro program address 0x{:02X} not bound to any instructions", addr)
@@ -174,14 +174,14 @@ namespace COP2K
                         ins.signal_count++;
             }
 
-            constexpr const Instruction *begin() const
+            constexpr const std::array<Instruction>::const_iterator *begin() const
             {
-                return instructions;
+                return instructions.cbegin();
             }
 
-            constexpr const Instruction *end() const
+            constexpr const std::array<Instruction>::const_iterator *end() const
             {
-                return instructions + (256 << 2);
+                return instructions.cend();
             }
 
             constexpr std::string dump() const
@@ -294,7 +294,7 @@ namespace COP2K
             }
 
         private:
-            Instruction instructions[256 >> 2];
+            std::array<Instruction, 256 >> 2> instructions;
     };
 }
 
