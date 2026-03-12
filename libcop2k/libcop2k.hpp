@@ -508,7 +508,7 @@ namespace COP2K
             constexpr void run_instruction()
             {
                 // NOTE: we assume user has loaded opcode
-                unsigned clock_count = opcode.get_from_byte(upc.get());
+                unsigned char clock_count = opcode.get_from_byte(upc.get()).signal_count;
 
                 while (clock_count--)
                     run_clock();
