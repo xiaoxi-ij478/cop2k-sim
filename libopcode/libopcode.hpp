@@ -141,7 +141,8 @@ namespace COP2K
                 );
             }
 
-            constexpr void patch_um(uint8_t addr, const std::bitset<24> &val) {
+            constexpr void patch_um(uint8_t addr, const std::bitset<24> &val)
+            {
                 Instruction &ins = instructions.at(addr >> 2);
 
                 if (!ins.exist)
@@ -158,7 +159,8 @@ namespace COP2K
                         ins.signal_count++;
             }
 
-            constexpr void patch_um(uint8_t addr, unsigned bit_pos, bool val) {
+            constexpr void patch_um(uint8_t addr, unsigned bit_pos, bool val)
+            {
                 Instruction &ins = instructions.at(addr >> 2);
                 if (!ins.exist)
                     throw std::out_of_range(
@@ -174,12 +176,12 @@ namespace COP2K
                         ins.signal_count++;
             }
 
-            constexpr std::array<Instruction>::const_iterator *begin() const
+            constexpr std::array<Instruction>::const_iterator begin() const
             {
                 return instructions.cbegin();
             }
 
-            constexpr std::array<Instruction>::const_iterator *end() const
+            constexpr std::array<Instruction>::const_iterator end() const
             {
                 return instructions.cend();
             }
