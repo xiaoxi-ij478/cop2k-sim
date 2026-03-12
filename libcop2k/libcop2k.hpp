@@ -580,7 +580,7 @@ namespace COP2K
 
             constexpr void set_em_data(uint8_t addr, uint8_t val)
             {
-                em.set_data_at(addr);
+                em.set_data_at(addr, val);
             }
 
             constexpr void clear_em()
@@ -619,14 +619,9 @@ namespace COP2K
 
             constexpr void load_instruction(FILE *in)
             {
-                std::bitset<24> all_on;
-                all_on.set();
-
-                for (unsigned i = 0; i < 256; i++)
-                    um.set_data_at(i, all_on);
-
                 opcode.load_instr_txt(in);
-                for (const Instruction &i : opcode)
+
+                for (const Opcode::Instruction &i : opcode)
                     for (unsigned char j = 0; j < 4; j++)
                         um.set_data_at(i.byte | j, i.microprogram.at(j));
             }

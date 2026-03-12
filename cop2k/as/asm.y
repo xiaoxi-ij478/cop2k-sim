@@ -113,7 +113,7 @@ instruction
     }
     | IDENTIFIER EQU expression '\n' {
         $$.mnemonic = strdup("00const");
-        $$.label = nullptr;
+        $$.label = $1;
         $$.operand.src_type = Operand::IMMED;
         $$.operand.dst_type = Operand::NONE;
         $$.operand.src = $3;
@@ -632,12 +632,17 @@ operand
 expression
     : NUMBER
     | IDENTIFIER {
+        // we prefer look it up as a label than as a constant
         try {
-            $$ = get_const($1);
+            $$ = get_label($1);
         } catch (const std::out_of_range &) {
-            free($1);
-            yyerror("constant not found");
-            YYERROR;
+            try {
+                $$ = get_const($1);
+            } catch (const std::out_of_range &) {
+                free($1);
+                yyerror("constant/label not found");
+                YYERROR;
+            }
         }
 
         free($1);

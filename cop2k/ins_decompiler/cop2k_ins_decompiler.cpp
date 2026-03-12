@@ -1,29 +1,17 @@
-#include <iostream>
 #include <fstream>
-#include <cstdlib>
-#include <cstring>
-#include <string>
-#include <bitset>
+#include <iostream>
 #include <sstream>
-#include <iomanip>
-#include <format>
+
 #include <endian.h>
 
-enum class Operand : unsigned char {
-    NONE, A, REG, REGADDR, IMMED, ADDR
-};
-struct Instruction {
-    bool exist;
-    unsigned char byte;
-    std::string name;
-    std::string desc;
-    Operand src, dst;
-} instr[256 >> 2];
-
-std::bitset<24> um[256];
+#include "libopcode.hpp"
 
 int main(int argc, char **argv)
 {
+    COP2K::Opcode opcode;
+    std::array<COP2K::Opcode::Instruction, 64> ins;
+    std::array<std::array<std::bitset<24>, 4>, 64> um;
+
     if (argc < 2) {
         std::cerr << "usage: cop2k_ins_decompiler <file.ins>" << std::endl;
         return EXIT_FAILURE;
@@ -42,132 +30,45 @@ int main(int argc, char **argv)
     if (magic != magic_str)
         return EXIT_FAILURE;
 
-    for (Instruction &i : instr) {
+    for (COP2K::Opcode::Instruction &i : ins) {
         if (!(i.exist = ifs.get()))
             continue;
 
-        i.name.resize(ifs.get());
-        ifs.read(i.name.data(), i.name.size());
+        i.mnemonic.resize(ifs.get());
+        ifs.read(i.mnemonic.data(), i.mnemonic.size());
         i.byte = ifs.get();
-        i.src = static_cast<Operand>(ifs.get());
-        i.dst = static_cast<Operand>(ifs.get());
+        i.src = static_cast<COP2K::Operand>(ifs.get());
+        i.dst = static_cast<COP2K::Operand>(ifs.get());
         i.desc.resize(ifs.get());
         ifs.read(i.desc.data(), i.desc.size());
     }
 
-    for (std::bitset<24> &i : um) {
-        std::stringstream ss;
-        unsigned a;
-        ifs.read(reinterpret_cast<char *>(&a), 3);
-        a = le32toh(a);
+    for (std::array<std::bitset<24>, 4> &u : um)
+        for (std::bitset<24> &i : u) {
+            std::stringstream ss;
+            unsigned a;
+            ifs.read(reinterpret_cast<char *>(&a), 3);
+            a = le32toh(a);
 
-        while (a) {
-            ss << ((a & 1) ? "1" : "0");
-            a >>= 1;
+            while (a) {
+                ss << ((a & 1) ? "1" : "0");
+                a >>= 1;
+            }
+
+            ss >> i;
+            ifs.get();
         }
 
-        ss >> i;
-        ifs.get();
-    }
+    for (unsigned i = 0; i < 64; i++)
+        if (ins.at(i).exist)
+            opcode.add(
+                ins.at(i).byte,
+                ins.at(i).mnemonic.c_str(),
+                ins.at(i).desc.c_str(),
+                ins.at(i).src,
+                ins.at(i).dst,
+                um.at(i)
+            );
 
-    for (unsigned i = 0; i < 256 >> 2; i++) {
-        if (!instr[i].exist)
-            continue;
-
-        std::cout << instr[i].name << ' ';
-
-        switch (instr[i].src) {
-            case Operand::NONE:
-                break;
-
-            case Operand::A:
-                std::cout << "A";
-                break;
-
-            case Operand::REG:
-                std::cout << "R?";
-                break;
-
-            case Operand::REGADDR:
-                std::cout << "@R?";
-                break;
-
-            case Operand::IMMED:
-                std::cout << "#II";
-                break;
-
-            case Operand::ADDR:
-                std::cout << "MM";
-                break;
-        }
-
-        switch (instr[i].dst) {
-            case Operand::NONE:
-                break;
-
-            case Operand::A:
-                std::cout << ", A";
-                break;
-
-            case Operand::REG:
-                std::cout << ", R?";
-                break;
-
-            case Operand::REGADDR:
-                std::cout << ", @R?";
-                break;
-
-            case Operand::IMMED:
-                std::cout << ", #II";
-                break;
-
-            case Operand::ADDR:
-                std::cout << ", MM";
-                break;
-        }
-
-        std::cout << std::format(" @ 0x{:02X}: ", i << 2);
-
-        if (!instr[i].desc.empty())
-            std::cout << "// " << instr[i].desc;
-
-        std::cout << std::endl;
-
-        for (unsigned j = i << 2; j < (i << 2) + 4; j++) {
-            std::ostringstream oss;
-#define GET_BIT(pos, name) \
-    if (!um[j].test(23 - pos)) oss << "!" #name " "
-            GET_BIT(22, emwr);
-            GET_BIT(21, emrd);
-            GET_BIT(20, pcoe);
-            GET_BIT(19, emen);
-            GET_BIT(18, iren);
-            GET_BIT(17, eint);
-            GET_BIT(16, elp);
-            GET_BIT(15, maren);
-            GET_BIT(14, maroe);
-            GET_BIT(13, outen);
-            GET_BIT(12, sten);
-            GET_BIT(11, rrd);
-            GET_BIT(10, rwr);
-            GET_BIT(9, cn);
-            GET_BIT(8, fen);
-            GET_BIT(7, x2);
-            GET_BIT(6, x1);
-            GET_BIT(5, x0);
-            GET_BIT(4, wen);
-            GET_BIT(3, aen);
-            GET_BIT(2, s2);
-            GET_BIT(1, s1);
-            GET_BIT(0, s0);
-#undef GET_BIT
-
-            if (!oss.str().empty())
-                std::cout << "    " << j - (i << 2) << ": "
-                          << oss.str()
-                          << std::endl;
-        }
-
-        std::cout << ';' << std::endl;
-    }
+    std::cout << opcode.dump();
 }

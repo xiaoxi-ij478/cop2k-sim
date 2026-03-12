@@ -59,11 +59,10 @@ instructions
     : // none
     | instructions instruction {
         std::array<std::bitset<24>, 4> arr;
-        for (unsigned char i = 0; i < $2.microprogram.signal_count; i++)
-            arr.at(i) =
-                $2.microprogram.signals[i].to_bitset();
+        for (unsigned char i = 0; i < 4; i++)
+            arr.at(i) = $2.microprogram.signals[i].to_bitset();
 
-        current_opcode->add($2.byte, $2.mnemonic, "", $2.src, $2.dst, $2.microprogram.signal_count, arr);
+        current_opcode->add($2.byte, $2.mnemonic, "", $2.src, $2.dst, arr);
         free($2.mnemonic);
         $2.mnemonic = nullptr;
     }
@@ -408,13 +407,13 @@ micro_program
     | micro_program micro_program_signal {
         $$ = $1;
 
-        if (!$1.signal.empty()) {
-            if ($$.signal_count++ != $1.index) {
+        if (!$2.signal.empty()) {
+            if ($$.signal_count++ != $2.index) {
                 yyerror("micro program index not continous");
                 YYERROR;
             }
 
-            $$.signals[$1.index] = $1.signal;
+            $$.signals[$2.index] = $2.signal;
         }
     }
 ;

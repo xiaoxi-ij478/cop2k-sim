@@ -5,9 +5,11 @@
 #include <stdexcept>
 #include <format>
 #include <cstring>
+#include <cctype>
 #include <bitset>
 #include <array>
 #include <sstream>
+#include <iterator>
 
 namespace COP2K
 {
@@ -25,6 +27,7 @@ namespace COP2K
 
     class Opcode
     {
+        public:
             struct Instruction {
                 bool exist;
                 unsigned char byte;
@@ -59,7 +62,6 @@ namespace COP2K
                 }
             };
 
-        public:
             constexpr Opcode()
             {
                 clear();
@@ -74,7 +76,6 @@ namespace COP2K
                 const char *desc,
                 Operand src,
                 Operand dst,
-                unsigned char signal_count,
                 const std::array<std::bitset<24>, 4> &microprogram
             )
             {
@@ -84,13 +85,21 @@ namespace COP2K
                     );
 
                 instructions.at(byte >> 2).exist = true;
-                instructions.at(byte >> 2).byte = byte;
-                instructions.at(byte >> 2).mnemonic = mnemonic;
-                instructions.at(byte >> 2).desc = desc;
-                instructions.at(byte >> 2).src = src;
-                instructions.at(byte >> 2).dst = dst;
-                instructions.at(byte >> 2).signal_count = signal_count;
-                instructions.at(byte >> 2).microprogram = microprogram;
+#define LOAD(name) instructions.at(byte >> 2).name = name
+                LOAD(byte);
+                LOAD(mnemonic);
+                LOAD(desc);
+                LOAD(src);
+                LOAD(dst);
+                LOAD(microprogram);
+#undef LOAD
+                instructions.at(byte >> 2).signal_count = std::count_if(
+                            microprogram.cbegin(),
+                            microprogram.cend(),
+                [](const std::bitset<24> &i) {
+                    return !i.all();
+                }
+                        );
             }
 
             constexpr void load_instr_txt(FILE *in)
@@ -121,8 +130,24 @@ namespace COP2K
                 Operand dst
             ) const
             {
+                std::string m;
+                std::string n;
+
+                std::transform(
+                    i.mnemonic.cbegin(),
+                    i.mnemonic.cend(),
+                    std::back_inserter(m),
+                    tolower
+                );
+                std::transform(
+                    mnemonic,
+                    mnemonic + strlen(mnemonic),
+                    std::back_inserter(n),
+                    tolower
+                );
+
                 for (const Instruction &i : instructions)
-                    if (i.exist && i.mnemonic == mnemonic && i.src == src && i.dst == dst)
+                    if (i.exist && m == n && i.src == src && i.dst == dst)
                         return i;
 
                 throw std::out_of_range(
@@ -147,46 +172,53 @@ namespace COP2K
 
                 if (!ins.exist)
                     throw std::out_of_range(
-                        std::format("micro program address 0x{:02X} not bound to any instructions", addr)
+                        std::format("micro program address 0x{:02X} not bound to any instructions",
+                                    addr)
                     );
-                
+
                 ins.microprogram.at(addr & 3) = val;
 
-                if (addr & 3 == ins.signal_count - 1)
+                if (addr & 3 == ins.signal_count - 1) {
                     if (val.all())
                         ins.signal_count--;
+
                     else
                         ins.signal_count++;
+                }
             }
 
             constexpr void patch_um(uint8_t addr, unsigned bit_pos, bool val)
             {
                 Instruction &ins = instructions.at(addr >> 2);
+
                 if (!ins.exist)
                     throw std::out_of_range(
-                        std::format("micro program address 0x{:02X} not bound to any instructions", addr)
+                        std::format("micro program address 0x{:02X} not bound to any instructions",
+                                    addr)
                     );
-                
-                insmicroprogram.at(addr & 3).set(bit_pos, val);
-                
-                if (addr & 3 == ins.signal_count - 1)
+
+                ins.microprogram.at(addr & 3).set(bit_pos, val);
+
+                if (addr & 3 == ins.signal_count - 1) {
                     if (ins.microprogram.at(addr & 3).all())
                         ins.signal_count--;
+
                     else
                         ins.signal_count++;
+                }
             }
 
-            constexpr std::array<Instruction>::const_iterator begin() const
+            constexpr std::array < Instruction, (256 >> 2) >::const_iterator begin() const
             {
                 return instructions.cbegin();
             }
 
-            constexpr std::array<Instruction>::const_iterator end() const
+            constexpr std::array < Instruction, (256 >> 2) >::const_iterator end() const
             {
                 return instructions.cend();
             }
 
-            constexpr std::string dump() const
+            std::string dump() const
             {
                 std::ostringstream oss;
 
@@ -194,30 +226,30 @@ namespace COP2K
                     if (!i.exist)
                         continue;
 
-                    oss << i.mnemonic << ' ';
+                    oss << i.mnemonic;
 
                     switch (i.src) {
                         case Operand::NONE:
                             break;
 
                         case Operand::REG_A:
-                            oss << "A";
+                            oss << " A";
                             break;
 
                         case Operand::REG:
-                            oss << "R?";
+                            oss << " R?";
                             break;
 
                         case Operand::REGADDR:
-                            oss << "@R?";
+                            oss << " @R?";
                             break;
 
                         case Operand::IMMED:
-                            oss << "#II";
+                            oss << " #II";
                             break;
 
                         case Operand::MEMADDR:
-                            oss << "MM";
+                            oss << " MM";
                             break;
                     }
 
@@ -252,12 +284,12 @@ namespace COP2K
                         oss << "// " << i.desc;
 
                     oss << std::endl;
+                    unsigned a = 0;
 
-                    unsigned a=0;
-                    for (const std::bitset<24> &j : i.microprogram) {
-                        std::ostringstream oss;
+                    for (unsigned char j = 0; j < i.signal_count; j++) {
+                        std::ostringstream oss2;
 #define GET_BIT(pos, name) \
-    if (!j.test(23 - pos)) oss << "!" #name " "
+    if (!i.microprogram.at(j).test(23 - pos)) oss2 << "!" #name " "
                         GET_BIT(22, emwr);
                         GET_BIT(21, emrd);
                         GET_BIT(20, pcoe);
@@ -282,11 +314,9 @@ namespace COP2K
                         GET_BIT(1, s1);
                         GET_BIT(0, s0);
 #undef GET_BIT
-
-                        if (!oss.str().empty())
-                            oss << "    " << a++ << ": "
-                                      << oss.str()
-                                      << std::endl;
+                        oss << "    " << a++ << ": "
+                            << oss2.str()
+                            << std::endl;
                     }
 
                     oss << ';' << std::endl;
@@ -296,7 +326,7 @@ namespace COP2K
             }
 
         private:
-            std::array<Instruction, 256 >> 2> instructions;
+            std::array < Instruction, (256 >> 2) > instructions;
     };
 }
 
