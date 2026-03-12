@@ -187,7 +187,7 @@ JZ MM @ 0xa4 jump-on-zero:
     0: !emrd !pcoe !emen !elp
     1: !emrd !pcoe !iren
 ;
-JMP MM @ 0xac:
+JMP MM @ 0xac jump-unconditional:
     0: !emrd !pcoe !emen !elp
     1: !emrd !pcoe !iren
 ;
