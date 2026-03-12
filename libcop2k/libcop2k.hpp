@@ -210,8 +210,8 @@ namespace COP2K
                        );
             }
 
-            FlagWithCallback cy;
-            FlagWithCallback cn;
+            Flag cy;
+            Flag cn;
             Flag z;
             Flag fen;
         private:
@@ -441,12 +441,6 @@ namespace COP2K
                 s2.set_callback([this](FlagWithCallback &) {
                     update_alu();
                 });
-                alu.cy.set_callback([this](FlagWithCallback &) {
-                    update_alu();
-                });
-                alu.cn.set_callback([this](FlagWithCallback &) {
-                    update_alu();
-                });
                 manual_dbus_input.set(0);
                 upc.set(0);
                 pc.set(0);
@@ -529,6 +523,11 @@ namespace COP2K
                 alu.cn.pos();
             }
 
+            constexpr void pos_cy()
+            {
+                alu.cy.pos();
+            }
+
             constexpr void neg_fen()
             {
                 alu.fen.neg();
@@ -537,6 +536,11 @@ namespace COP2K
             constexpr void neg_cn()
             {
                 alu.cn.neg();
+            }
+
+            constexpr void neg_cy()
+            {
+                alu.cy.neg();
             }
 
             constexpr void set_fen(bool val)
@@ -549,6 +553,11 @@ namespace COP2K
                 alu.cn.set(val);
             }
 
+            constexpr void set_cy(bool val)
+            {
+                alu.cy.set(val);
+            }
+
             constexpr bool get_fen() const
             {
                 return alu.fen.get();
@@ -557,6 +566,11 @@ namespace COP2K
             constexpr bool get_cn() const
             {
                 return alu.cn.get();
+            }
+
+            constexpr bool get_cy() const
+            {
+                return alu.cy.get();
             }
 
             Memory em;
