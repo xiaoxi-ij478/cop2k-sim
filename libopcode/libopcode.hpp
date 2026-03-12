@@ -34,7 +34,7 @@ namespace COP2K
                 unsigned char signal_count;
                 std::array<std::bitset<24>, 4> microprogram;
 
-                Instruction() :
+                constexpr Instruction() :
                     exist(false),
                     byte(0),
                     src(Operand::NONE),
@@ -45,7 +45,7 @@ namespace COP2K
                         i.set();
                 }
 
-                void clear()
+                constexpr void clear()
                 {
                     exist = false;
                     byte = 0;
@@ -60,7 +60,7 @@ namespace COP2K
             };
 
         public:
-            Opcode()
+            constexpr Opcode()
             {
                 clear();
             }
@@ -68,7 +68,7 @@ namespace COP2K
             // WARNING:
             // this function won't do sanity check on the arguments,
             // so make sure all arguments are correct!
-            void add(
+            constexpr void add(
                 unsigned char byte,
                 const char *mnemonic,
                 const char *desc,
@@ -93,7 +93,7 @@ namespace COP2K
                 instructions[byte >> 2].microprogram = microprogram;
             }
 
-            void load_instr_txt(FILE *in)
+            constexpr void load_instr_txt(FILE *in)
             {
                 clear();
                 parse_instruction_file(in, this);
@@ -109,13 +109,13 @@ namespace COP2K
                     );
             }
 
-            void clear()
+            constexpr void clear()
             {
                 for (Instruction &i : instructions)
                     i.clear();
             }
 
-            const Instruction &get_from_mnemonic(
+            constexpr const Instruction &get_from_mnemonic(
                 const char *mnemonic,
                 Operand src,
                 Operand dst
@@ -130,7 +130,7 @@ namespace COP2K
                 );
             }
 
-            const Instruction &get_from_byte(unsigned char byte) const
+            constexpr const Instruction &get_from_byte(unsigned char byte) const
             {
                 for (const Instruction &i : instructions)
                     if (i.exist && i.byte == byte)
@@ -141,17 +141,50 @@ namespace COP2K
                 );
             }
 
-            const Instruction *begin() const
+            constexpr void patch_um(uint8_t addr, const std::bitset<24> &val) {
+                Instruction &ins = instructions[addr >> 2];
+
+                if (!ins.exist)
+                    throw std::out_of_range(
+                        std::format("micro program address 0x{:02X} not bound to any instructions", addr)
+                    );
+                
+                ins.microprogram.at(addr & 3) = val;
+
+                if (addr & 3 == ins.signal_count - 1)
+                    if (val.all())
+                        ins.signal_count--;
+                    else
+                        ins.signal_count++;
+            }
+
+            constexpr void patch_um(uint8_t addr, unsigned bit_pos, bool val) {
+                Instruction &ins = instructions[addr >> 2];
+                if (!ins.exist)
+                    throw std::out_of_range(
+                        std::format("micro program address 0x{:02X} not bound to any instructions", addr)
+                    );
+                
+                insmicroprogram.at(addr & 3).set(bit_pos, val);
+                
+                if (addr & 3 == ins.signal_count - 1)
+                    if (ins.microprogram.at(addr & 3).all())
+                        ins.signal_count--;
+                    else
+                        ins.signal_count++;
+            }
+
+            constexpr const Instruction *begin() const
             {
                 return instructions;
             }
 
-            const Instruction *end() const
+            constexpr const Instruction *end() const
             {
                 return instructions + (256 << 2);
             }
 
-            std::string dump() const
+            constexpr std::string dump() const
             {
                 std::ostringstream oss;
 
