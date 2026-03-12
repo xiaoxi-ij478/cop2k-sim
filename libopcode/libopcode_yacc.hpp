@@ -5,7 +5,13 @@ struct Signals {
     bool s0, s1, s2, aen, wen, x0, x1, x2, fen, cn, rwr, rrd, sten, outen,
          maroe, maren, elp, eint, iren, emen, pcoe, emrd, emwr;
 
-    void clear() {
+    bool empty()
+    {
+        return s0 && s1 && s2 && aen && wen && x0 && x1 && x2 && fen && cn && rwr && rrd && sten && outen && maroe && maren && elp && eint && iren && emen && pcoe && emrd && emwr;
+    }
+
+    void clear()
+    {
         s0 = s1 = s2 = aen = wen = x0 = x1 = x2 = fen = cn = rwr = rrd = sten =
         outen = maroe = maren = elp = eint = iren = emen = pcoe = emrd = emwr = true;
     }
@@ -45,7 +51,8 @@ struct MicroProgram {
     unsigned char signal_count;
     struct Signals signals[4];
 
-    void clear() {
+    void clear()
+    {
         signal_count = 0;
 
         for (struct Signals &i : signals)
