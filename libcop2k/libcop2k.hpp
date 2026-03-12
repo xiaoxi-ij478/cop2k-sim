@@ -559,11 +559,6 @@ namespace COP2K
                 return alu.cn.get();
             }
 
-            constexpr void load_instruction_set(FILE *in)
-            {
-                opcode.load_instr_txt(in);
-            }
-
             Memory em;
             Register l, d, r;
             Register r0, r1, r2, r3;
@@ -612,6 +607,8 @@ namespace COP2K
             Flag x2, x1, x0;
             Flag wen, aen;
             FlagWithCallback s2, s1, s0;
+
+            Opcode opcode;
 
         private:
             constexpr void update_alu()
@@ -958,7 +955,6 @@ namespace COP2K
             DBus dbus;
             ABus abus;
             IBus ibus;
-            Opcode opcode;
     };
 
 }
