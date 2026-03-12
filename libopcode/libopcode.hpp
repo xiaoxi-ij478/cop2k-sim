@@ -214,7 +214,7 @@ namespace COP2K
                     oss << std::endl;
 
                     unsigned a=0;
-                    for (const std::bitset<24> j : i.microprogram) {
+                    for (const std::bitset<24> &j : i.microprogram) {
                         std::ostringstream oss;
 #define GET_BIT(pos, name) \
     if (!j.test(23 - pos)) oss << "!" #name " "
