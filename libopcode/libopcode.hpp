@@ -174,12 +174,12 @@ namespace COP2K
                         ins.signal_count++;
             }
 
-            constexpr const std::array<Instruction>::const_iterator *begin() const
+            constexpr std::array<Instruction>::const_iterator *begin() const
             {
                 return instructions.cbegin();
             }
 
-            constexpr const std::array<Instruction>::const_iterator *end() const
+            constexpr std::array<Instruction>::const_iterator *end() const
             {
                 return instructions.cend();
             }
