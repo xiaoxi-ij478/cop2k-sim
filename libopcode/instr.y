@@ -59,11 +59,11 @@ instructions
     : // none
     | instructions instruction {
         std::array<std::bitset<24>, 4> arr;
-        while ($2.microprogram.signal_count--)
-            arr.at($2.microprogram.signal_count) =
-                $2.microprogram.signals[$2.microprogram.signal_count].to_bitset();
+        for (unsigned char i = 0; i < $2.microprogram.signal_count; i++)
+            arr.at(i) =
+                $2.microprogram.signals[i].to_bitset();
 
-        current_opcode->add($2.byte, $2.mnemonic, "", $2.src, $2.dst, arr);
+        current_opcode->add($2.byte, $2.mnemonic, "", $2.src, $2.dst, $2.microprogram.signal_count, arr);
         free($2.mnemonic);
         $2.mnemonic = nullptr;
     }
