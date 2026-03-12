@@ -573,10 +573,63 @@ namespace COP2K
                 return alu.cy.get();
             }
 
-            Memory em;
+            constexpr uint8_t get_em_data(uint8_t addr) const
+            {
+                return em.get_data_at(addr);
+            }
+
+            constexpr void set_em_data(uint8_t addr, uint8_t val)
+            {
+                em.set_data_at(addr);
+            }
+
+            constexpr void clear_em()
+            {
+                for (unsigned i = 0; i < 256; i++)
+                    em.set_data_at(i, 0);
+            }
+
+            constexpr const std::bitset<24> &get_um_data(uint8_t addr) const
+            {
+                return um.get_data_at(addr);
+            }
+
+            constexpr void set_um_data(uint8_t addr, const std::bitset<24> &val)
+            {
+                um.set_data_at(addr, val);
+                opcode.patch_um(addr, val);
+            }
+
+            constexpr void set_um_data(uint8_t addr, unsigned bit_pos, bool val)
+            {
+                um.set_data_at(addr, bit_pos, val);
+                opcode.patch_um(addr, bit_pos, val);
+            }
+
+            constexpr void clear_um()
+            {
+                std::bitset<24> all_on;
+                all_on.set();
+
+                for (unsigned i = 0; i < 256; i++)
+                    um.set_data_at(i, all_on);
+
+                opcode.clear();
+            }
+
+            constexpr void load_instruction(FILE *in)
+            {
+                std::bitset<24> all_on;
+                all_on.set();
+
+                for (unsigned i = 0; i < 256; i++)
+                    um.set_data_at(i, all_on);
+
+                opcode.load_instr_txt(in);
+            }
+
             Register l, d, r;
             Register r0, r1, r2, r3;
-            MicroProgramMemory um;
 
             // valid when TRUE
             Flag manual_dbus;
@@ -965,6 +1018,8 @@ namespace COP2K
                     upc.set(upc.get() + 1);
             }
 
+            Memory em;
+            MicroProgramMemory um;
             ALU alu;
             DBus dbus;
             ABus abus;
