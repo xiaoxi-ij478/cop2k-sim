@@ -626,6 +626,9 @@ namespace COP2K
                     um.set_data_at(i, all_on);
 
                 opcode.load_instr_txt(in);
+                for (const Instruction &i : opcode)
+                    for (unsigned char j = 0; j < 4; j++)
+                        um.set_data_at(i.byte | j, i.microprogram.at(j));
             }
 
             Register l, d, r;
