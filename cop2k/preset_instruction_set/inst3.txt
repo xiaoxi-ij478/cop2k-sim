@@ -9,7 +9,7 @@ ADD A, #II @ 0x8:
     0: !emrd !pcoe !emen !wen
     1: !emrd !pcoe !iren !x1 !x0 !aen !s2 !s1 !s0
 ;
-GOTO MM @ 0xc:
+GOTO MM @ 0xc jump-unconditional:
     0: !emrd !pcoe !emen !elp
     1: !emrd !pcoe !iren
 ;
