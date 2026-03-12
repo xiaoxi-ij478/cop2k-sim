@@ -60,7 +60,7 @@ ST A, MM @ 0x48:
     1: !emwr !emen !maroe !x1 !x0
     2: !emrd !pcoe !iren
 ;
-JMP MM @ 0x4c:
+JMP MM @ 0x4c jump-unconditional:
     0: !emrd !pcoe !emen !elp
     1: !emrd !pcoe !iren
 ;
