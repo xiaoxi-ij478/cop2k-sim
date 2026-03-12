@@ -162,7 +162,7 @@ namespace COP2K
             // left, direct, right
             constexpr std::tuple<uint8_t, uint8_t, uint8_t> calc(uint8_t A, uint8_t W)
             {
-                int result = 0;
+                int result = 0; // we must use `int` to test overflow
 
                 switch (calc_type) {
                     case CalcTypes::ADD:
@@ -507,7 +507,11 @@ namespace COP2K
 
             constexpr void run_instruction()
             {
+                // NOTE: we assume user has loaded opcode
+                unsigned clock_count = opcode.get_from_byte(upc.get());
 
+                while (clock_count--)
+                    run_clock();
             }
 
             constexpr void trigger_interrupt()
@@ -553,6 +557,11 @@ namespace COP2K
             constexpr bool get_cn() const
             {
                 return alu.cn.get();
+            }
+
+            constexpr void load_instruction_set(FILE *in)
+            {
+                opcode.load_instr_txt(in);
             }
 
             Memory em;
@@ -878,7 +887,13 @@ namespace COP2K
                             break;
 
                         case DBusReaderType::PC:
-                            pc.set(dbus.get_data());
+                            if (
+                                (ir.get() & 0x8) >> 3 == 1 || // jump unconditionally
+                                ((ir.get() & 0xC) >> 2 == 0 && alu.cy.get()) || // jump on carry
+                                ((ir.get() & 0xC) >> 2 == 1 && alu.z.get()) // jump on zero
+                            )
+                                pc.set(dbus.get_data());
+
                             break;
 
                         case DBusReaderType::A:
@@ -943,6 +958,7 @@ namespace COP2K
             DBus dbus;
             ABus abus;
             IBus ibus;
+            Opcode opcode;
     };
 
 }
