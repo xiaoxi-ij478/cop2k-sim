@@ -70,5 +70,5 @@ int main(int argc, char **argv)
                 um.at(i)
             );
 
-    std::cout << opcode.dump();
+    std::cout << opcode.to_string();
 }

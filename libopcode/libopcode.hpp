@@ -10,6 +10,7 @@
 #include <array>
 #include <sstream>
 #include <iterator>
+#include <cstdio>
 
 namespace COP2K
 {
@@ -107,12 +108,12 @@ namespace COP2K
                 clear();
                 parse_instruction_file(in, this);
 
-                if (!instructions.at(0x0).exist)
+                if (!instructions.at(0x0 >> 2).exist)
                     throw std::logic_error(
                         "instruction @ 0x0 MUST be _FATCH_ with no operands"
                     );
 
-                if (!instructions.at(0xB8).exist)
+                if (!instructions.at(0xB8 >> 2).exist)
                     throw std::logic_error(
                         "instruction @ 0xB8 MUST be _INT_ with no operands"
                     );
@@ -130,15 +131,7 @@ namespace COP2K
                 Operand dst
             ) const
             {
-                std::string m;
                 std::string n;
-
-                std::transform(
-                    i.mnemonic.cbegin(),
-                    i.mnemonic.cend(),
-                    std::back_inserter(m),
-                    tolower
-                );
                 std::transform(
                     mnemonic,
                     mnemonic + strlen(mnemonic),
@@ -146,9 +139,18 @@ namespace COP2K
                     tolower
                 );
 
-                for (const Instruction &i : instructions)
+                for (const Instruction &i : instructions) {
+                    std::string m;
+                    std::transform(
+                        i.mnemonic.cbegin(),
+                        i.mnemonic.cend(),
+                        std::back_inserter(m),
+                        tolower
+                    );
+
                     if (i.exist && m == n && i.src == src && i.dst == dst)
                         return i;
+                }
 
                 throw std::out_of_range(
                     std::format("instruction {} undefined", mnemonic)
@@ -218,7 +220,7 @@ namespace COP2K
                 return instructions.cend();
             }
 
-            std::string dump() const
+            std::string to_string() const
             {
                 std::ostringstream oss;
 

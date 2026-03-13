@@ -606,7 +606,7 @@ signal
 
 %%
 
-void COP2K::parse_instruction_file(FILE *in, Opcode *opcode)
+void COP2K::parse_instruction_file(FILE *in, COP2K::Opcode *opcode)
 {
     yyinstrin = in;
     current_opcode = opcode;
@@ -616,6 +616,5 @@ void COP2K::parse_instruction_file(FILE *in, Opcode *opcode)
     current_opcode = nullptr;
 
     if (result)
-        throw std::logic_error("failed to parse file");
-
+        throw std::runtime_error("failed to parse file");
 }

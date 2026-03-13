@@ -16,6 +16,7 @@
 				</Compiler>
 				<Linker>
 					<Add directory="../libcop2k/bin/Debug" />
+					<Add directory="../libopcode/bin/Debug" />
 				</Linker>
 			</Target>
 			<Target title="CLI Release">
@@ -29,6 +30,7 @@
 				<Linker>
 					<Add option="-s" />
 					<Add directory="../libcop2k/bin/Release" />
+					<Add directory="../libopcode/bin/Release" />
 				</Linker>
 			</Target>
 			<Target title="VM Debug">
@@ -41,6 +43,7 @@
 				</Compiler>
 				<Linker>
 					<Add directory="../libcop2k/bin/Debug" />
+					<Add directory="../libopcode/bin/Debug" />
 				</Linker>
 			</Target>
 			<Target title="VM Release">
@@ -50,6 +53,7 @@
 				<Option compiler="gcc" />
 				<Linker>
 					<Add directory="../libcop2k/bin/Release" />
+					<Add directory="../libopcode/bin/Release" />
 				</Linker>
 			</Target>
 			<Target title="AS Debug">
@@ -58,13 +62,14 @@
 				<Option object_output="obj/AS Debug/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
-				<Option parameters="/home/xiaoxi/Codeblocks_Projects/cop2k/cop2k/instr.txt /home/xiaoxi/Codeblocks_Projects/cop2k/cop2k/instr.txt" />
+				<Option parameters="/home/xiaoxi/Codeblocks_Projects/cop2k/cop2k/preset_instruction_set/inst.txt /home/xiaoxi/Codeblocks_Projects/cop2k/cop2k/demo_program/ex5.asm" />
 				<Compiler>
 					<Add option="-ggdb3" />
 					<Add option="-DYYDEBUG" />
 				</Compiler>
 				<Linker>
 					<Add directory="../libcop2k/bin/Debug" />
+					<Add directory="../libopcode/bin/Debug" />
 				</Linker>
 			</Target>
 			<Target title="AS Release">
@@ -79,6 +84,7 @@
 				<Linker>
 					<Add option="-s" />
 					<Add directory="../libcop2k/bin/Release" />
+					<Add directory="../libopcode/bin/Release" />
 				</Linker>
 			</Target>
 			<Target title="cop2k_ins_decompiler">
@@ -88,10 +94,13 @@
 				<Option type="1" />
 				<Option compiler="gcc" />
 				<Option parameters="/home/xiaoxi/Public/COP2000/INST.INS" />
-				<Option projectLinkerOptionsRelation="1" />
 				<Compiler>
 					<Add option="-ggdb3" />
 				</Compiler>
+				<Linker>
+					<Add directory="../libcop2k/bin/Debug" />
+					<Add directory="../libopcode/bin/Debug" />
+				</Linker>
 			</Target>
 		</Build>
 		<Compiler>
@@ -102,6 +111,7 @@
 		</Compiler>
 		<Linker>
 			<Add library="cop2k" />
+			<Add library="opcode" />
 		</Linker>
 		<Unit filename="as/as.cpp">
 			<Option target="AS Debug" />

@@ -9,6 +9,7 @@
 #include <string>
 #include <tuple>
 #include <vector>
+#include <format>
 
 #include "libopcode.hpp"
 
@@ -17,33 +18,49 @@ namespace COP2K
     class Register
     {
         public:
+            constexpr Register(uint8_t val, const std::string &name = std::string()) :
+                name(name),
+                val(val)
+            {}
+
             constexpr uint8_t get() const
             {
-                return data;
+                return val;
             }
 
-            constexpr void set(uint8_t val)
+            constexpr void set(uint8_t val_)
             {
-                data = val;
+                val = val_;
+            }
+
+            constexpr std::string to_string() const
+            {
+                return std::format("\"{}\"'s value: 0x{:02X}\n", name, get());
             }
 
         private:
-            uint8_t data;
+            std::string name;
+            uint8_t val;
     };
 
     class RegisterWithCallback
     {
         public:
-            RegisterWithCallback() : data(), callback([](RegisterWithCallback &) {}) {}
+            // initialization will not trigger callback
+            RegisterWithCallback(uint8_t val, const std::string &name = std::string()) :
+                val(val),
+                name(name),
+                callback([](RegisterWithCallback &) {})
+            {}
 
             constexpr uint8_t get() const
             {
-                return data;
+                return val;
             }
 
-            void set(uint8_t val)
+            void set(uint8_t val_)
             {
-                data = val;
+                val = val_;
                 callback(*this);
             }
 
@@ -57,63 +74,84 @@ namespace COP2K
                 callback = [](RegisterWithCallback &) {};
             }
 
+            constexpr std::string to_string() const
+            {
+                return std::format("\"{}\"'s value: 0x{:02X}\n", name, get());
+            }
+
         private:
-            uint8_t data;
+            uint8_t val;
+            std::string name;
             std::function<void(RegisterWithCallback &)> callback;
     };
 
     class Flag
     {
         public:
+            Flag(bool val, const std::string &name = std::string()) :
+                name(name),
+                val(val)
+            {}
+
             constexpr bool get() const
             {
-                return data;
+                return val;
             }
 
             constexpr void pos()
             {
-                data = true;
+                val = true;
             }
 
             constexpr void neg()
             {
-                data = false;
+                val = false;
             }
 
-            constexpr void set(bool val)
+            constexpr void set(bool val_)
             {
-                data = val;
+                val = val_;
+            }
+
+            constexpr std::string to_string() const
+            {
+                return std::format("\"{}\"'s flag value: {}\n", name, get());
             }
 
         private:
-            bool data : 1;
+            std::string name;
+            bool val : 1;
     };
 
     class FlagWithCallback
     {
         public:
-            FlagWithCallback() : callback([](FlagWithCallback &) {}), data() {}
+            FlagWithCallback(bool val, const std::string &name = std::string()) :
+                name(name),
+                callback([](FlagWithCallback &) {}),
+                     val(val)
+            {}
 
             constexpr bool get() const
             {
-                return data;
+                return val;
             }
 
             void pos()
             {
-                data = true;
+                val = true;
                 callback(*this);
             }
 
             void neg()
             {
-                data = false;
+                val = false;
                 callback(*this);
             }
 
-            void set(bool val)
+            void set(bool val_)
             {
-                data = val;
+                val = val_;
                 callback(*this);
             }
 
@@ -127,10 +165,16 @@ namespace COP2K
                 callback = [](FlagWithCallback &) {};
             }
 
-        private:
-            std::function<void(FlagWithCallback &)> callback;
-            bool data : 1;
+            constexpr std::string to_string() const
+            {
+                return std::format("\"{}\"'s flag value: {}\n", name, get());
+            }
 
+
+        private:
+            std::string name;
+            std::function<void(FlagWithCallback &)> callback;
+            bool val : 1;
     };
 
     class ALU
@@ -141,13 +185,20 @@ namespace COP2K
             enum class CalcTypes : uint8_t {
                 ADD,
                 SUB,
-                AND,
                 OR,
+                AND,
                 CARRY_ADD,
                 CARRY_SUB,
                 NOT,
                 DIRECT_A
             };
+
+            constexpr ALU() :
+                cy(false, "Cy IN"),
+                cn(false, "CN"),
+                z(false, "Z"),
+                fen(false, "FEN")
+            {}
 
             constexpr void set_calc_type(CalcTypes val)
             {
@@ -162,7 +213,7 @@ namespace COP2K
             // left, direct, right
             constexpr std::tuple<uint8_t, uint8_t, uint8_t> calc(uint8_t A, uint8_t W)
             {
-                int result = 0; // we must use `int` to test overflow
+                int result = 0; // must use `int` to test overflow
 
                 switch (calc_type) {
                     case CalcTypes::ADD:
@@ -173,12 +224,12 @@ namespace COP2K
                         result = A - W;
                         break;
 
-                    case CalcTypes::AND:
-                        result = A & W;
-                        break;
-
                     case CalcTypes::OR:
                         result = A | W;
+                        break;
+
+                    case CalcTypes::AND:
+                        result = A & W;
                         break;
 
                     case CalcTypes::CARRY_ADD:
@@ -207,6 +258,59 @@ namespace COP2K
                            (result << 1) | (cy.get() & cn.get()),
                            result,
                            (result >> 1) | ((cy.get() & cn.get()) << 7)
+                       );
+            }
+
+            constexpr std::string to_string() const
+            {
+                const char *calc_type_str = nullptr;
+
+                switch (calc_type) {
+                    case CalcTypes::ADD:
+                        calc_type_str = "Add A and W (A + W)";
+                        break;
+
+                    case CalcTypes::SUB:
+                        calc_type_str = "Subtract W from A (A - W)";
+                        break;
+
+                    case CalcTypes::OR:
+                        calc_type_str = "Or A and W (A | W)";
+                        break;
+
+                    case CalcTypes::AND:
+                        calc_type_str = "And A and W (A & W)";
+                        break;
+
+                    case CalcTypes::CARRY_ADD:
+                        calc_type_str = "Add A and W with carry (A + W + C)";
+                        break;
+
+                    case CalcTypes::CARRY_SUB:
+                        calc_type_str = "Subtract W from A with carry (A - W - C)";
+                        break;
+
+                    case CalcTypes::NOT:
+                        calc_type_str = "Not A (~A)";
+                        break;
+
+                    case CalcTypes::DIRECT_A:
+                        calc_type_str = "Direct A (A)";
+                        break;
+                }
+
+                return std::format(
+                           "ALU's status:\n"
+                           "Calculation type: {}\n"
+                           "{}\n"
+                           "{}\n"
+                           "{}\n"
+                           "{}\n",
+                           calc_type_str,
+                           cy.to_string(),
+                           cn.to_string(),
+                           z.to_string(),
+                           fen.to_string()
                        );
             }
 
@@ -283,6 +387,8 @@ namespace COP2K
                 data = val;
             }
 
+            virtual constexpr std::string to_string() const = 0;
+
         private:
             std::vector<ReaderType> reader;
             WriterType writer;
@@ -290,7 +396,6 @@ namespace COP2K
     };
 
     enum class DBusReaderType {
-        NONE,
         MAR,
         OUT,
         ST,
@@ -313,10 +418,107 @@ namespace COP2K
         EM,
         MANUAL
     };
-    class DBus : public Bus<DBusReaderType, DBusWriterType> {};
+    class DBus : public Bus<DBusReaderType, DBusWriterType>
+    {
+        public:
+            constexpr std::string to_string() const override
+            {
+                std::string reader_str;
+                const char *writer_str = nullptr;
+
+                switch (get_writer()) {
+                    case DBusWriterType::NONE:
+                        writer_str = "No writer";
+                        break;
+
+                    case DBusWriterType::IN:
+                        writer_str = "User IN (IN)";
+                        break;
+
+                    case DBusWriterType::IA:
+                        writer_str = "Interrupt address (IA)";
+                        break;
+
+                    case DBusWriterType::ST:
+                        writer_str = "Stack pointer (ST)";
+                        break;
+
+                    case DBusWriterType::PC:
+                        writer_str = "Program count (PC)";
+                        break;
+
+                    case DBusWriterType::D:
+                        writer_str = "ALU direct (D)";
+                        break;
+
+                    case DBusWriterType::L:
+                        writer_str = "ALU shift left (L)";
+                        break;
+
+                    case DBusWriterType::R:
+                        writer_str = "ALU shift right (R)";
+                        break;
+
+                    case DBusWriterType::REG:
+                        writer_str = "Register (R?)";
+                        break;
+
+                    case DBusWriterType::EM:
+                        writer_str = "Memory (EM)";
+                        break;
+
+                    case DBusWriterType::MANUAL:
+                        writer_str = "Manual input";
+                        break;
+                }
+
+                for (DBusReaderType i : get_reader())
+                    switch (i) {
+                        case DBusReaderType::MAR:
+                            reader_str.append("    Memory address register (MAR)\n");
+                            break;
+
+                        case DBusReaderType::OUT:
+                            reader_str.append("    User OUT (OUT)\n");
+                            break;
+
+                        case DBusReaderType::ST:
+                            reader_str.append("    Stack pointer (ST)\n");
+                            break;
+
+                        case DBusReaderType::PC:
+                            reader_str.append("    Program count (PC)\n");
+                            break;
+
+                        case DBusReaderType::A:
+                            reader_str.append("    A\n");
+                            break;
+
+                        case DBusReaderType::W:
+                            reader_str.append("    W\n");
+                            break;
+
+                        case DBusReaderType::REG:
+                            reader_str.append("    Register (R?)\n");
+                            break;
+
+                        case DBusReaderType::EM:
+                            reader_str.append("    Memory (EM)\n");
+                            break;
+                    }
+
+                return std::format(
+                           "Data bus's status:\n"
+                           "Writer: {}\n"
+                           "Readers:\n"
+                           "{}\n",
+                           writer_str,
+                           reader_str
+                       );
+            }
+    };
 
     enum class ABusReaderType {
-        NONE,
         EM
     };
     enum class ABusWriterType {
@@ -324,10 +526,47 @@ namespace COP2K
         PC,
         MAR
     };
-    class ABus : public Bus<ABusReaderType, ABusWriterType> {};
+    class ABus : public Bus<ABusReaderType, ABusWriterType>
+    {
+        public:
+            constexpr std::string to_string() const override
+            {
+                std::string reader_str;
+                const char *writer_str = nullptr;
+
+                switch (get_writer()) {
+                    case ABusWriterType::NONE:
+                        writer_str = "No writer";
+                        break;
+
+                    case ABusWriterType::PC:
+                        writer_str = "Program count (PC)";
+                        break;
+
+                    case ABusWriterType::MAR:
+                        writer_str = "Memory address register (MAR)";
+                        break;
+                }
+
+                for (ABusReaderType i : get_reader())
+                    switch (i) {
+                        case ABusReaderType::EM:
+                            reader_str.append("    Memory (EM)\n");
+                            break;
+                    }
+
+                return std::format(
+                           "Address bus's status:\n"
+                           "Writer: {}\n"
+                           "Readers:\n"
+                           "{}\n",
+                           writer_str,
+                           reader_str
+                       );
+            }
+    };
 
     enum class IBusReaderType {
-        NONE,
         UPC,
         IR
     };
@@ -336,7 +575,47 @@ namespace COP2K
         EM,
         INTERRUPT
     };
-    class IBus : public Bus<IBusReaderType, IBusWriterType> {};
+    class IBus : public Bus<IBusReaderType, IBusWriterType>
+    {
+        public:
+            constexpr std::string to_string() const override
+            {
+                std::string reader_str;
+                const char *writer_str = nullptr;
+
+                switch (get_writer()) {
+                    case IBusWriterType::NONE:
+                        writer_str = "No writer";
+                        break;
+
+                    case IBusWriterType::EM:
+                        writer_str = "Memory (EM)";
+
+                    case IBusWriterType::INTERRUPT:
+                        writer_str = "Interrupt special (0xB8)";
+                }
+
+                for (IBusReaderType i : get_reader())
+                    switch (i) {
+                        case IBusReaderType::UPC:
+                            reader_str.append("    Micro program counter (UPC)\n");
+                            break;
+
+                        case IBusReaderType::IR:
+                            reader_str.append("    Instruction register (IR)\n");
+                            break;
+                    }
+
+                return std::format(
+                           "Address bus's status:\n"
+                           "Writer: {}\n"
+                           "Readers:\n"
+                           "{}\n",
+                           writer_str,
+                           reader_str
+                       );
+            }
+    };
 
     class Memory
     {
@@ -361,6 +640,12 @@ namespace COP2K
                 return mem.at(addr);
             }
 
+            constexpr void clear()
+            {
+                for (unsigned i = 0; i < 256; i++)
+                    set_data_at(i, 0);
+            }
+
             // bypass normal addr lookup mode
             constexpr void set_data_at(uint8_t actaddr, uint8_t val)
             {
@@ -370,6 +655,31 @@ namespace COP2K
             constexpr uint8_t get_data_at(uint8_t actaddr) const
             {
                 return mem.at(actaddr);
+            }
+
+            constexpr std::string dump_content() const
+            {
+                std::string ret;
+
+                for (unsigned i = 0; i < 256; i++)
+                    ret.push_back(get_data_at(i));
+
+                return ret;
+            }
+
+            constexpr std::string to_string() const
+            {
+                std::string ret("Memory status:");
+
+                for (unsigned i = 0; i < 256; i++) {
+                    if (!(i & 0xf))
+                        ret.append(std::format("\n0x{:02X}: ", i));
+
+                    ret.append(std::format("0x{:02X} ", get_data_at(i)));
+                }
+
+                ret.push_back('\n');
+                return ret;
             }
 
         private:
@@ -400,6 +710,15 @@ namespace COP2K
                 return mem.at(addr);
             }
 
+            constexpr void clear()
+            {
+                std::bitset<24> all_on;
+                all_on.set();
+
+                for (unsigned i = 0; i < 256; i++)
+                    set_data_at(i, all_on);
+            }
+
             // bypass normal addr lookup mode
             constexpr void set_data_at(uint8_t actaddr, const std::bitset<24> &val)
             {
@@ -416,6 +735,35 @@ namespace COP2K
                 return mem.at(actaddr);
             }
 
+            constexpr std::string dump_content() const
+            {
+                std::string ret;
+
+                for (unsigned i = 0; i < 256; i++) {
+                    unsigned a = get_data_at(i).to_ulong();
+                    ret.push_back(a & 0xff);
+                    ret.push_back((a >> 8) & 0xff);
+                    ret.push_back((a >> 16) & 0xff);
+                }
+
+                return ret;
+            }
+
+            constexpr std::string to_string() const
+            {
+                std::string ret("Micro program memory status:");
+
+                for (unsigned i = 0; i < 256; i++) {
+                    if (!(i & 0xf))
+                        ret.append(std::format("\n0x{:02X}: ", i));
+
+                    ret.append(std::format("{:06X} ", get_data_at(i).to_ulong()));
+                }
+
+                ret.push_back('\n');
+                return ret;
+            }
+
         private:
             std::array<std::bitset<24>, 256> mem;
             uint8_t addr;
@@ -424,7 +772,53 @@ namespace COP2K
     class COP2K
     {
         public:
-            COP2K()
+            COP2K() :
+                l(0, "L"),
+                d(0, "D"),
+                r(0, "R"),
+                r0(0, "R0"),
+                r1(0, "R1"),
+                r2(0, "R2"),
+                r3(0, "R3"),
+                manual_dbus(true, "Data bus input is manual"),
+                sa(false, "SA"),
+                sb(false, "SB"),
+                ireq(false, "IREQ"),
+                iack(false, "IACK"),
+                running_manually(true, "Running manually"),
+                halt(true, "Halt"),
+                manual_dbus_input(0, "Data bus manual input"),
+                upc(0, "UPC"),
+                pc(0, "PC"),
+                mar(0, "MAR"),
+                ia(0, "IA"),
+                st(0, "ST"),
+                in(0, "IN"),
+                out(0, "OUT"),
+                ir(0, "IR"),
+                a(0, "A"),
+                w(0, "W"),
+                emwr(true, "EMWR"),
+                emrd(true, "EMRD"),
+                pcoe(true, "PCOE"),
+                emen(true, "EMEN"),
+                iren(true, "IREN"),
+                eint(true, "EINT"),
+                elp(true, "ELP"),
+                maren(true, "MAREN"),
+                maroe(true, "MAROE"),
+                outen(true, "OUTEN"),
+                sten(true, "STEN"),
+                rrd(true, "RRD"),
+                rwr(true, "RWR"),
+                x2(true, "X2"),
+                x1(true, "X1"),
+                x0(true, "X0"),
+                wen(true, "WEN"),
+                aen(true, "AEN"),
+                s2(true, "S2"),
+                s1(true, "S1"),
+                s0(true, "S0")
             {
                 a.set_callback([this](RegisterWithCallback &) {
                     update_alu();
@@ -441,49 +835,9 @@ namespace COP2K
                 s2.set_callback([this](FlagWithCallback &) {
                     update_alu();
                 });
-                manual_dbus_input.set(0);
-                upc.set(0);
-                pc.set(0);
-                mar.set(0);
-                ia.set(0xE0);
-                st.set(0);
-                in.set(0);
-                out.set(0);
-                ir.set(0);
-                r0.set(0);
-                r1.set(0);
-                r2.set(0);
-                r3.set(0);
-                emwr.pos();
-                emrd.pos();
-                pcoe.pos();
-                emen.pos();
-                iren.pos();
-                eint.pos();
-                elp.pos();
-                maren.pos();
-                maroe.pos();
-                outen.pos();
-                sten.pos();
-                rrd.pos();
-                rwr.pos();
-                x2.pos();
-                x1.pos();
-                x0.pos();
-                wen.pos();
-                aen.pos();
-                s2.pos();
-                s1.pos();
-                s0.pos();
-                sa.neg();
-                sb.neg();
+                update_alu();
                 pos_fen();
                 pos_cn();
-                ireq.neg();
-                iack.neg();
-                manual_dbus.pos();
-                running_manually.pos();
-                halt.pos();
             }
 
             constexpr void run_forever()
@@ -585,8 +939,7 @@ namespace COP2K
 
             constexpr void clear_em()
             {
-                for (unsigned i = 0; i < 256; i++)
-                    em.set_data_at(i, 0);
+                em.clear();
             }
 
             constexpr const std::bitset<24> &get_um_data(uint8_t addr) const
@@ -608,12 +961,7 @@ namespace COP2K
 
             constexpr void clear_um()
             {
-                std::bitset<24> all_on;
-                all_on.set();
-
-                for (unsigned i = 0; i < 256; i++)
-                    um.set_data_at(i, all_on);
-
+                um.clear();
                 opcode.clear();
             }
 
@@ -624,6 +972,66 @@ namespace COP2K
                 for (const Opcode::Instruction &i : opcode)
                     for (unsigned char j = 0; j < 4; j++)
                         um.set_data_at(i.byte | j, i.microprogram.at(j));
+            }
+
+            constexpr std::string to_string() const
+            {
+                std::string ret("COP2K's status:\n");
+                ret.append("Registers:\n");
+                ret.append(l.to_string());
+                ret.append(d.to_string());
+                ret.append(r.to_string());
+                ret.append(r0.to_string());
+                ret.append(r1.to_string());
+                ret.append(r2.to_string());
+                ret.append(r3.to_string());
+                ret.append(manual_dbus_input.to_string());
+                ret.append(upc.to_string());
+                ret.append(pc.to_string());
+                ret.append(mar.to_string());
+                ret.append(ia.to_string());
+                ret.append(st.to_string());
+                ret.append(in.to_string());
+                ret.append(out.to_string());
+                ret.append(ir.to_string());
+                ret.append(a.to_string());
+                ret.append(w.to_string());
+                ret.append("Flags:\n");
+                ret.append(manual_dbus.to_string());
+                ret.append(sa.to_string());
+                ret.append(sb.to_string());
+                ret.append(ireq.to_string());
+                ret.append(iack.to_string());
+                ret.append(running_manually.to_string());
+                ret.append(halt.to_string());
+                ret.append(emwr.to_string());
+                ret.append(emrd.to_string());
+                ret.append(pcoe.to_string());
+                ret.append(emen.to_string());
+                ret.append(iren.to_string());
+                ret.append(eint.to_string());
+                ret.append(elp.to_string());
+                ret.append(maren.to_string());
+                ret.append(maroe.to_string());
+                ret.append(outen.to_string());
+                ret.append(sten.to_string());
+                ret.append(rrd.to_string());
+                ret.append(rwr.to_string());
+                ret.append(x2.to_string());
+                ret.append(x1.to_string());
+                ret.append(x0.to_string());
+                ret.append(wen.to_string());
+                ret.append(aen.to_string());
+                ret.append(s2.to_string());
+                ret.append(s1.to_string());
+                ret.append(s0.to_string());
+                ret.append("Buses:\n");
+                ret.append(dbus.to_string());
+                ret.append(abus.to_string());
+                ret.append(ibus.to_string());
+                ret.append("ALU:\n");
+                ret.append(alu.to_string());
+                return ret;
             }
 
             Register l, d, r;
@@ -672,8 +1080,6 @@ namespace COP2K
             Flag x2, x1, x0;
             Flag wen, aen;
             FlagWithCallback s2, s1, s0;
-
-            Opcode opcode;
 
         private:
             constexpr void update_alu()
@@ -923,9 +1329,6 @@ namespace COP2K
 
                 for (ABusReaderType i : abus.get_reader())
                     switch (i) {
-                        case ABusReaderType::NONE:
-                            break;
-
                         case ABusReaderType::EM:
                             em.set_addr(abus.get_data());
                             break;
@@ -933,9 +1336,6 @@ namespace COP2K
 
                 for (DBusReaderType i : dbus.get_reader())
                     switch (i) {
-                        case DBusReaderType::NONE:
-                            break;
-
                         case DBusReaderType::MAR:
                             mar.set(dbus.get_data());
                             break;
@@ -996,9 +1396,6 @@ namespace COP2K
 
                 for (IBusReaderType i : ibus.get_reader())
                     switch (i) {
-                        case IBusReaderType::NONE:
-                            break;
-
                         case IBusReaderType::IR:
                             ir.set(ibus.get_data());
                             sa.set(ibus.get_data() & (1 << 0));
@@ -1016,6 +1413,7 @@ namespace COP2K
                     upc.set(upc.get() + 1);
             }
 
+            Opcode opcode;
             Memory em;
             MicroProgramMemory um;
             ALU alu;
