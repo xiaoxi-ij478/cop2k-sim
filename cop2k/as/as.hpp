@@ -1,10 +1,13 @@
 #ifndef AS_HPP_INCLUDED
 #define AS_HPP_INCLUDED
 
+#include <algorithm>
+#include <iterator>
 #include <cstdio>
 #include <stdexcept>
 #include <stack>
 #include <unordered_map>
+#include <utility>
 
 #include "libcop2k.hpp"
 
@@ -24,28 +27,39 @@ struct InstructionOperand {
 namespace COP2K
 {
     class AS;
-    void assemble(FILE *in, AS *as);
+    void assemble(FILE *in, AS *as, bool no_eval);
 
     class AS
     {
         public:
-            AS() : stop(false), overflow(false) {}
+            AS() : overflow(false) {}
 
             constexpr void assemble_file(FILE *in)
             {
+                // we use two-pass mode to scan for any label / constants
+                consts.clear();
                 em.clear();
-                assemble(in, this);
+                assemble(in, this, true);
+                em.clear();
+                rewind(in);
+                assemble(in, this, false);
+            }
+
+            constexpr void clear()
+            {
+                consts.clear();
+                em.clear();
+                opcode.clear();
+                overflow=false;
             }
 
             constexpr void add_instruction(
-                const char *mnemonic,
-                const char *label,
-                const struct InstructionOperand &operand
+                const std::string &mnemonic,
+                const std::string &label,
+                const struct InstructionOperand &operand,
+                unsigned lineno
             )
             {
-                if (stop)
-                    return;
-
 #define PUT_BYTE(b) \
     do { \
         if (overflow) \
@@ -56,27 +70,29 @@ namespace COP2K
         em.set_addr(em.get_addr() + 1); \
     } while (0)
 
-                if (!strcasecmp(mnemonic, "end"))
-                    stop = true;
-
-                else if (
-                    !strcasecmp(mnemonic, "if") ||
-                    !strcasecmp(mnemonic, "else") ||
-                    !strcasecmp(mnemonic, "endif")
+                if (
+                    mnemonic == "end" ||
+                    mnemonic == "if" ||
+                    mnemonic == "else" ||
+                    mnemonic == "endif"
                 )
                     return;
 
-                if (!strcasecmp(mnemonic, "db"))
+                else if (mnemonic == "db")
                     PUT_BYTE(operand.src);
 
-                else if (!strcasecmp(mnemonic, "org"))
+                else if (mnemonic == "org") {
+                    if (operand.src == 255)
+                        overflow = true;
+
                     em.set_addr(operand.src);
 
-                else if (
-                    !strcasecmp(mnemonic, "00const") ||
-                    !strcasecmp(mnemonic, "00label")
-                )
-                    consts.emplace(label, operand.src);
+                } else if (mnemonic == "00const")
+                    // we use "construct if not exist, return if exists" feature of map
+                    consts[label] = std::make_pair(operand.src, lineno);
+
+                else if (mnemonic == "00label")
+                    labels[label] = std::make_pair(em.get_addr(), lineno);
 
                 else {
                     const Opcode::Instruction &ins = opcode.get_from_mnemonic(
@@ -132,9 +148,23 @@ namespace COP2K
 
             Opcode opcode;
             Memory em;
-            bool stop;
+            // *INDENT-OFF*
+            std::unordered_map<
+                std::string,
+                std::pair<
+                    unsigned char, // value
+                    unsigned // line no
+                >
+            > consts;
+            std::unordered_map<
+                std::string,
+                std::pair<
+                    unsigned char, // value
+                    unsigned // line no
+                >
+            > labels;
+            // *INDENT-ON*
             bool overflow;
-            std::unordered_map<std::string, unsigned char> consts;
     };
 }
 

@@ -644,6 +644,8 @@ namespace COP2K
             {
                 for (unsigned i = 0; i < 256; i++)
                     set_data_at(i, 0);
+
+                set_addr(0);
             }
 
             // bypass normal addr lookup mode
@@ -717,6 +719,8 @@ namespace COP2K
 
                 for (unsigned i = 0; i < 256; i++)
                     set_data_at(i, all_on);
+
+                set_addr(0);
             }
 
             // bypass normal addr lookup mode
@@ -741,9 +745,9 @@ namespace COP2K
 
                 for (unsigned i = 0; i < 256; i++) {
                     unsigned a = get_data_at(i).to_ulong();
-                    ret.push_back(a & 0xff);
-                    ret.push_back((a >> 8) & 0xff);
                     ret.push_back((a >> 16) & 0xff);
+                    ret.push_back((a >> 8) & 0xff);
+                    ret.push_back(a & 0xff);
                 }
 
                 return ret;

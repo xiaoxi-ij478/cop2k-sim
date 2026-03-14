@@ -73,8 +73,8 @@ namespace COP2K
             // so make sure all arguments are correct!
             constexpr void add(
                 unsigned char byte,
-                const char *mnemonic,
-                const char *desc,
+                const std::string &mnemonic_raw,
+                const std::string &desc,
                 Operand src,
                 Operand dst,
                 const std::array<std::bitset<24>, 4> &microprogram
@@ -86,6 +86,14 @@ namespace COP2K
                     );
 
                 instructions.at(byte >> 2).exist = true;
+                std::string mnemonic;
+
+                std::transform(
+                    mnemonic_raw.cbegin(),
+                    mnemonic_raw.cend(),
+                    std::back_inserter(mnemonic),
+                    toupper
+                );
 #define LOAD(name) instructions.at(byte >> 2).name = name
                 LOAD(byte);
                 LOAD(mnemonic);
@@ -94,13 +102,15 @@ namespace COP2K
                 LOAD(dst);
                 LOAD(microprogram);
 #undef LOAD
+                // *INDENT-OFF*
                 instructions.at(byte >> 2).signal_count = std::count_if(
-                            microprogram.cbegin(),
-                            microprogram.cend(),
-                [](const std::bitset<24> &i) {
-                    return !i.all();
-                }
-                        );
+                    microprogram.cbegin(),
+                    microprogram.cend(),
+                    [](const std::bitset<24> &i) {
+                        return !i.all();
+                    }
+                );
+                // *INDENT-ON*
             }
 
             constexpr void load_instr_txt(FILE *in)
@@ -126,31 +136,22 @@ namespace COP2K
             }
 
             constexpr const Instruction &get_from_mnemonic(
-                const char *mnemonic,
+                const std::string &mnemonic,
                 Operand src,
                 Operand dst
             ) const
             {
                 std::string n;
                 std::transform(
-                    mnemonic,
-                    mnemonic + strlen(mnemonic),
+                    mnemonic.cbegin(),
+                    mnemonic.cend(),
                     std::back_inserter(n),
-                    tolower
+                    toupper
                 );
 
-                for (const Instruction &i : instructions) {
-                    std::string m;
-                    std::transform(
-                        i.mnemonic.cbegin(),
-                        i.mnemonic.cend(),
-                        std::back_inserter(m),
-                        tolower
-                    );
-
-                    if (i.exist && m == n && i.src == src && i.dst == dst)
+                for (const Instruction &i : instructions)
+                    if (i.exist && i.mnemonic == n && i.src == src && i.dst == dst)
                         return i;
-                }
 
                 throw std::out_of_range(
                     std::format("instruction {} undefined", mnemonic)
@@ -210,12 +211,12 @@ namespace COP2K
                 }
             }
 
-            constexpr std::array < Instruction, (256 >> 2) >::const_iterator begin() const
+            constexpr std::array<Instruction, 64>::const_iterator begin() const
             {
                 return instructions.cbegin();
             }
 
-            constexpr std::array < Instruction, (256 >> 2) >::const_iterator end() const
+            constexpr std::array<Instruction, 64>::const_iterator end() const
             {
                 return instructions.cend();
             }
@@ -328,7 +329,7 @@ namespace COP2K
             }
 
         private:
-            std::array < Instruction, (256 >> 2) > instructions;
+            std::array<Instruction, 64> instructions;
     };
 }
 

@@ -15,7 +15,7 @@ int main(int argc, char **argv)
     COP2K::AS as;
 
     if (argc < 3) {
-        std::cerr << "usage: as <instr.ins> <file.asm> [-o <out.bin>]" << std::endl;
+        std::cerr << "usage: as <instr.txt> <file.asm> [-o <out.bin>]" << std::endl;
         return EXIT_FAILURE;
     }
 
@@ -25,7 +25,7 @@ int main(int argc, char **argv)
 
     if (argc == 5) {
         if (!strcmp(argv[3], "-o")) {
-            std::cerr << "usage: as <instr.ins> <file.asm> [-o <out.bin>]" << std::endl;
+            std::cerr << "usage: as <instr.txt> <file.asm> [-o <out.bin>]" << std::endl;
             return EXIT_FAILURE;
         }
 
@@ -33,7 +33,7 @@ int main(int argc, char **argv)
     }
 
     if (!instr_file || !asm_file || !out_file)
-        return 1;
+        return EXIT_FAILURE;
 
     as.opcode.load_instr_txt(instr_file);
     fclose(instr_file);

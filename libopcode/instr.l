@@ -22,7 +22,12 @@
 "jump-on-carry"        { return JUMP_ON_CARRY_MARKER; }
 
 [A-Z_][A-Z0-9._]* {
-    yyinstrlval.identifier_v = strdup(yyinstrtext);
+    char *newtext = strdup(yytext);
+
+    for (char *i = newtext; *i; i++)
+        *i = tolower(*i);
+
+    yyinstrlval.identifier_v = newtext;
     BEGIN(OPERAND_STATE);
     return IDENTIFIER;
 }

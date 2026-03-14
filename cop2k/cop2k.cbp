@@ -58,7 +58,6 @@
 			</Target>
 			<Target title="AS Debug">
 				<Option output="bin/AS Debug/as" prefix_auto="1" extension_auto="1" />
-				<Option working_dir="bin/AS Debug/" />
 				<Option object_output="obj/AS Debug/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
@@ -74,7 +73,6 @@
 			</Target>
 			<Target title="AS Release">
 				<Option output="bin/AS Release/as" prefix_auto="1" extension_auto="1" />
-				<Option working_dir="bin/AS Release/" />
 				<Option object_output="obj/AS Release/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
@@ -89,7 +87,6 @@
 			</Target>
 			<Target title="cop2k_ins_decompiler">
 				<Option output="bin/cop2k_ins_decompiler/cop2k_ins_decompiler" prefix_auto="1" extension_auto="1" />
-				<Option working_dir="bin/cop2k_ins_decompiler/" />
 				<Option object_output="obj/cop2k_ins_decompiler/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
@@ -101,6 +98,44 @@
 					<Add directory="../libcop2k/bin/Debug" />
 					<Add directory="../libopcode/bin/Debug" />
 				</Linker>
+			</Target>
+			<Target title="DIS Debug">
+				<Option output="bin/DIS Debug/dis" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/DIS Debug/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Option parameters="preset_instruction_set/inst.txt ex5.bin" />
+				<Compiler>
+					<Add option="-g" />
+				</Compiler>
+				<Linker>
+					<Add directory="../libcop2k/bin/Debug" />
+					<Add directory="../libopcode/bin/Debug" />
+				</Linker>
+			</Target>
+			<Target title="DIS Release">
+				<Option output="bin/DIS Release/dis" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/DIS Release/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O2" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+					<Add directory="../libcop2k/bin/Release" />
+					<Add directory="../libopcode/bin/Release" />
+				</Linker>
+			</Target>
+			<Target title="Signal explain Debug">
+				<Option output="bin/Signal explain Debug/cop2k" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="bin/Signal explain Debug/" />
+				<Option object_output="obj/Signal explain Debug/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+				</Compiler>
 			</Target>
 		</Build>
 		<Compiler>
@@ -116,37 +151,55 @@
 		<Unit filename="as/as.cpp">
 			<Option target="AS Debug" />
 			<Option target="AS Release" />
+			<Option target="Signal explain Debug" />
 		</Unit>
 		<Unit filename="as/as.hpp">
 			<Option target="AS Debug" />
 			<Option target="AS Release" />
+			<Option target="Signal explain Debug" />
 		</Unit>
 		<Unit filename="as/asm.l">
 			<Option compile="1" />
 			<Option compiler="gcc" use="1" buildCommand="flex -Pyyasm -o$file_dir/$file_name.scanner.cpp $file" />
 			<Option target="AS Debug" />
 			<Option target="AS Release" />
+			<Option target="Signal explain Debug" />
 		</Unit>
 		<Unit filename="as/asm.y">
 			<Option compile="1" />
 			<Option compiler="gcc" use="1" buildCommand="bison -v -pyyasm -d $file -o $file_dir/$file_name.parser.cpp" />
 			<Option target="AS Debug" />
 			<Option target="AS Release" />
+			<Option target="Signal explain Debug" />
 		</Unit>
 		<Unit filename="cli/cli.cpp">
 			<Option target="CLI Debug" />
 			<Option target="CLI Release" />
+			<Option target="Signal explain Debug" />
 		</Unit>
 		<Unit filename="cli/cli.hpp">
 			<Option target="CLI Debug" />
 			<Option target="CLI Release" />
+			<Option target="Signal explain Debug" />
+		</Unit>
+		<Unit filename="dis/dis.cpp">
+			<Option target="DIS Debug" />
+			<Option target="DIS Release" />
+			<Option target="Signal explain Debug" />
+		</Unit>
+		<Unit filename="dis/dis.hpp">
+			<Option target="DIS Debug" />
+			<Option target="DIS Release" />
+			<Option target="Signal explain Debug" />
 		</Unit>
 		<Unit filename="ins_decompiler/cop2k_ins_decompiler.cpp">
 			<Option target="cop2k_ins_decompiler" />
+			<Option target="Signal explain Debug" />
 		</Unit>
 		<Unit filename="vm/vm.cpp">
 			<Option target="VM Debug" />
 			<Option target="VM Release" />
+			<Option target="Signal explain Debug" />
 		</Unit>
 		<Extensions>
 			<lib_finder disable_auto="1" />

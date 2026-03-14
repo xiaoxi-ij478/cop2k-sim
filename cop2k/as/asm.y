@@ -1,6 +1,7 @@
 %{
 #include <iostream>
 #include <stack>
+#include <vector>
 #include <cstring>
 #include <functional>
 
@@ -8,8 +9,11 @@
 
 extern int yyasmlex(void);
 extern int yyasmlineno;
+extern void yyasmset_lineno(int);
+extern void yyasmset_in(FILE *);
 extern FILE *yyasmin;
 
+static bool no_eval;
 static std::stack<bool> block_status;
 static COP2K::AS *current_as = nullptr;
 
@@ -53,6 +57,7 @@ void yyerror(const char *s)
     unsigned char number_v;
     char *identifier_v;
     struct {
+        bool is_empty;
         char *mnemonic;
         char *label;
         struct InstructionOperand operand;
@@ -84,34 +89,47 @@ void yyerror(const char *s)
 program
     : // none
     | program instruction {
-        if (block_active())
-            current_as->add_instruction($2.mnemonic, $2.label, $2.operand);
+        if (!$2.is_empty) {
+            if (block_active())
+                current_as->add_instruction(
+                    $2.mnemonic,
+                    $2.label ? $2.label : "",
+                    $2.operand,
+                    yyasmlineno
+                );
 
-        free($2.mnemonic);
-        $2.mnemonic = nullptr;
+            free($2.mnemonic);
+            $2.mnemonic = nullptr;
 
-        if ($2.label) {
-            free($2.label);
-            $2.label = nullptr;
+            if ($2.label) {
+                free($2.label);
+                $2.label = nullptr;
+            }
         }
     }
 ;
 
 instruction
-    : IDENTIFIER operand '\n'
+    : '\n' {
+        $$.is_empty = true;
+    }
+    | IDENTIFIER operand '\n'
        /* we must not use fixed mnemonic set
         * because instruction set is not fixed */
     {
+        $$.is_empty = false;
         $$.mnemonic = $1;
         $$.label = nullptr;
         $$.operand = $2;
     }
     | IDENTIFIER ':' '\n' {
+        $$.is_empty = false;
         $$.mnemonic = strdup("00label");
         $$.label = $1;
         $$.operand.src_type = $$.operand.dst_type = COP2K::Operand::NONE;
     }
     | IDENTIFIER EQU expression '\n' {
+        $$.is_empty = false;
         $$.mnemonic = strdup("00const");
         $$.label = $1;
         $$.operand.src_type = COP2K::Operand::IMMED;
@@ -119,6 +137,7 @@ instruction
         $$.operand.src = $3;
     }
     | DB expression '\n' {
+        $$.is_empty = false;
         $$.mnemonic = strdup("db");
         $$.label = nullptr;
         $$.operand.src_type = COP2K::Operand::MEMADDR;
@@ -126,6 +145,7 @@ instruction
         $$.operand.src = $2;
     }
     | ORG expression '\n' {
+        $$.is_empty = false;
         $$.mnemonic = strdup("org");
         $$.label = nullptr;
         $$.operand.src_type = COP2K::Operand::MEMADDR;
@@ -133,11 +153,15 @@ instruction
         $$.operand.src = $2;
     }
     | END '\n' {
-        $$.mnemonic = strdup("end");
-        $$.label = nullptr;
-        $$.operand.src_type = $$.operand.dst_type = COP2K::Operand::NONE;
+        YYACCEPT;
+
+        // $$.is_empty = false;
+        // $$.mnemonic = strdup("end");
+        // $$.label = nullptr;
+        // $$.operand.src_type = $$.operand.dst_type = COP2K::Operand::NONE;
     }
     | IF expression '\n' {
+        $$.is_empty = false;
         $$.mnemonic = strdup("if");
         $$.label = nullptr;
         $$.operand.src_type = COP2K::Operand::IMMED;
@@ -147,6 +171,7 @@ instruction
         push_block($2);
     }
     | ELSE '\n' {
+        $$.is_empty = false;
         $$.mnemonic = strdup("else");
         $$.label = nullptr;
         $$.operand.src_type = $$.operand.dst_type = COP2K::Operand::NONE;
@@ -164,6 +189,7 @@ instruction
         push_block(n);
     }
     | ENDIF '\n' {
+        $$.is_empty = false;
         $$.mnemonic = strdup("endif");
         $$.label = nullptr;
         $$.operand.src_type = $$.operand.dst_type = COP2K::Operand::NONE;
@@ -179,6 +205,7 @@ instruction
         pop_block();
     }
     | error '\n' {
+        $$.is_empty = true;
         // error messages has been printed by their perspective rules
         yyerrok;
         yyclearin;
@@ -632,12 +659,43 @@ operand
 expression
     : NUMBER
     | IDENTIFIER {
-        try {
-            $$ = current_as->consts.at($1);
-        } catch (const std::out_of_range &) {
-            free($1);
-            yyerror("constant not found");
-            YYERROR;
+        if (no_eval)
+            $$ = 0;
+
+        else {
+            /* const cannot be defined over its usage
+             * e.g.
+             * MOV A, C
+             * C EQU 3H
+             * is not allowed
+             */
+            try {
+                const std::pair<unsigned char, unsigned> &c = current_as->consts.at($1);
+                if (c.second >= yyasmlineno) {
+                    /* '==' means it is defined at the same line
+                     * like 'CCC EQU CCC'
+                     */
+                    free($1);
+                    yyerror("constant not found");
+                    YYERROR;
+                }
+
+                $$ = c.first;
+            } catch (const std::out_of_range &) {
+                /* but label can
+                 * e.g.
+                 * JMP C
+                 * C:
+                 */
+                try {
+                    const std::pair<unsigned char, unsigned> &c = current_as->labels.at($1);
+                    $$ = c.first;
+                } catch (const std::out_of_range &) {
+                    free($1);
+                    yyerror("constant not found");
+                    YYERROR;
+                }
+            }
         }
 
         free($1);
@@ -655,14 +713,16 @@ expression
     | '!' expression                 { $$ = ~$2; }
     | '+' expression   %prec UNPOS   { $$ = +$2; }
     | '-' expression   %prec UNNEG   { $$ = -$2; }
-    | '(' expression ')'             { $$ = $2; }
+    | '(' expression ')'             { $$ = $2;  }
 ;
 
 %%
 
-void COP2K::assemble(FILE *in, AS *as)
+void COP2K::assemble(FILE *in, AS *as, bool no_eval_val)
 {
-    yyasmin = in;
+    yyasmset_lineno(1);
+    yyasmset_in(in);
+    no_eval = no_eval_val;
     current_as = as;
 
     int result = yyparse();

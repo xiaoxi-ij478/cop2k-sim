@@ -7,6 +7,8 @@
 
 extern int yyinstrlex(void);
 extern int yyinstrlineno;
+extern void yyinstrset_lineno(int);
+extern void yyinstrset_in(FILE *);
 extern FILE *yyinstrin;
 
 static COP2K::Opcode *current_opcode = nullptr;
@@ -608,7 +610,8 @@ signal
 
 void COP2K::parse_instruction_file(FILE *in, COP2K::Opcode *opcode)
 {
-    yyinstrin = in;
+    yyinstrset_lineno(1);
+    yyinstrset_in(in);
     current_opcode = opcode;
 
     int result = yyparse();

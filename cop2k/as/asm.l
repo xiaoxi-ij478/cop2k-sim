@@ -29,7 +29,12 @@
 "endif"               { return ENDIF; }
 
 [A-Z_][A-Z0-9_.]* {
-    yyasmlval.identifier_v = strdup(yytext);
+    char *newtext = strdup(yytext);
+
+    for (char *i = newtext; *i; i++)
+        *i = tolower(*i);
+
+    yyasmlval.identifier_v = newtext;
     BEGIN(OPERAND_STATE);
     return IDENTIFIER;
 }
