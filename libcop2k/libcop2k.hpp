@@ -677,7 +677,7 @@ namespace COP2K
                     if (!(i & 0xf))
                         ret.append(std::format("\n0x{:02X}: ", i));
 
-                    ret.append(std::format("0x{:02X} ", get_data_at(i)));
+                    ret.append(std::format("{:02X} ", get_data_at(i)));
                 }
 
                 ret.push_back('\n');
@@ -978,10 +978,9 @@ namespace COP2K
                         um.set_data_at(i.byte | j, i.microprogram.at(j));
             }
 
-            constexpr std::string to_string() const
+            constexpr std::string reg_to_string() const
             {
-                std::string ret("COP2K's status:\n");
-                ret.append("Registers:\n");
+                std::string ret;
                 ret.append(l.to_string());
                 ret.append(d.to_string());
                 ret.append(r.to_string());
@@ -1000,7 +999,12 @@ namespace COP2K
                 ret.append(ir.to_string());
                 ret.append(a.to_string());
                 ret.append(w.to_string());
-                ret.append("Flags:\n");
+                return ret;
+            }
+
+            constexpr std::string flag_to_string() const
+            {
+                std::string ret;
                 ret.append(manual_dbus.to_string());
                 ret.append(sa.to_string());
                 ret.append(sb.to_string());
@@ -1029,12 +1033,26 @@ namespace COP2K
                 ret.append(s2.to_string());
                 ret.append(s1.to_string());
                 ret.append(s0.to_string());
+                return ret;
+            }
+
+            constexpr std::string to_string() const
+            {
+                std::string ret("COP2K's status:\n");
+                ret.append("Registers:\n");
+                ret.append(reg_to_string());
+                ret.append("Flags:\n");
+                ret.append(flag_to_string());
                 ret.append("Buses:\n");
                 ret.append(dbus.to_string());
                 ret.append(abus.to_string());
                 ret.append(ibus.to_string());
                 ret.append("ALU:\n");
                 ret.append(alu.to_string());
+                ret.append("Memory:\n");
+                ret.append(em.to_string());
+                ret.append("Micro program memory:\n");
+                ret.append(um.to_string());
                 return ret;
             }
 

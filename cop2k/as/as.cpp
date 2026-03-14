@@ -24,7 +24,7 @@ int main(int argc, char **argv)
     FILE *out_file = stdout;
 
     if (argc == 5) {
-        if (!strcmp(argv[3], "-o")) {
+        if (strcmp(argv[3], "-o")) {
             std::cerr << "usage: as <instr.txt> <file.asm> [-o <out.bin>]" << std::endl;
             return EXIT_FAILURE;
         }
