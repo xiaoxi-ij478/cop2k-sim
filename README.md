@@ -1,6 +1,6 @@
 # COP2000 Emulator Suite
 
-This is a emulator of COP2000 by <http://www.wave-cn.cn>. It is made to ease of learning COP2000 principle and faciliate debugging of programs of COP2000.
+This is a emulator of COP2000 by <http://www.wave-cn.cn>. It is made to ease learning COP2000 principle and faciliate debugging programs of COP2000.
 
 It aims to support:
 
