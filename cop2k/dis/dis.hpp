@@ -22,6 +22,7 @@ namespace COP2K
                     std::string mnemonic;
                     std::string operand;
                     std::string label;
+                    std::string byte;
                     bool src_is_memaddr;
                     unsigned char src_memaddr;
                     bool dst_is_memaddr;
@@ -32,15 +33,24 @@ namespace COP2K
                 unsigned label_count = 0;
                 unsigned cur_pos;
 
+
+
                 while ((cur_pos = in.tellg()) < 256) {
+                    bool src_is_memaddr = false, dst_is_memaddr = false;
+                    unsigned char src_memaddr = 0, dst_memaddr = 0;
                     const Opcode::Instruction *ins = nullptr;
                     unsigned char byte = in.get();
+                    unsigned char tmpbyte = 0;
+                    std::string ins_operand, b(std::format("{:02X}H", byte));
 
                     if (!byte) // do not put so many _FATCH_es
                         continue;
 
                     try {
                         ins = &opcode.get_from_byte(byte & ~0x3);
+
+                        if (ins.mnemonic == "_FATCH_")
+                            throw std::out_of_range();
 
                     } catch (const std::out_of_range &) {
                         lines.emplace(
@@ -49,6 +59,7 @@ namespace COP2K
                                 std::string("DB"),
                                 std::format("{:02X}H", byte),
                                 std::string(),
+                                std::move(b),
                                 false,
                                 0,
                                 false,
@@ -57,10 +68,6 @@ namespace COP2K
                         );
                         continue;
                     }
-
-                    std::string ins_operand;
-                    bool src_is_memaddr = false, dst_is_memaddr = false;
-                    unsigned char src_memaddr = 0, dst_memaddr = 0;
 
                     switch (ins->src) {
                         case Operand::NONE:
@@ -71,12 +78,14 @@ namespace COP2K
                             break;
 
                         case Operand::IMMED:
-                            ins_operand.append(std::format("#{:02X}H", in.get()));
+                            ins_operand.append(std::format("#{:02X}H", (tmpbyte = in.get())));
+                            b.append(std::format("{:02X}H", tmpbyte));
                             break;
 
                         case Operand::MEMADDR:
                             src_is_memaddr = true;
                             src_memaddr = in.get();
+                            b.append(std::format("{:02X}H", src_memaddr));
                             break;
 
                         case Operand::REG:
@@ -97,13 +106,15 @@ namespace COP2K
                             break;
 
                         case Operand::IMMED:
-                            ins_operand.append(std::format(", #{:02X}H", in.get()));
+                            ins_operand.append(std::format(", #{:02X}H", (tmpbyte = in.get())));
+                            b.append(std::format("{:02X}H", tmpbyte));
                             break;
 
                         case Operand::MEMADDR:
                             dst_is_memaddr = true;
                             dst_memaddr = in.get();
                             ins_operand.append(", ");
+                            b.append(std::format("{:02X}H", dst_memaddr));
                             break;
 
                         case Operand::REG:
