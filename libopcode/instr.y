@@ -12,6 +12,7 @@ extern void yyinstrset_in(FILE *);
 extern FILE *yyinstrin;
 
 static COP2K::Opcode *current_opcode = nullptr;
+static bool has_error = false;
 
 void yyerror(const char *s)
 {
@@ -23,12 +24,12 @@ void yyerror(const char *s)
     unsigned char number_v;
     char *identifier_v;
     struct {
-        COP2K::Operand src, dst;
+        COP2K::OperandType src, dst;
     } operand_v;
     struct {
         unsigned char byte;
         char *mnemonic;
-        COP2K::Operand src, dst;
+        COP2K::OperandType src, dst;
         struct MicroProgram microprogram;
     } instruction_v;
     struct Signals signals_v;
@@ -68,6 +69,12 @@ instructions
         free($2.mnemonic);
         $2.mnemonic = nullptr;
     }
+    | error instruction {
+        // error messages has been printed by their perspective rules
+        has_error = true;
+        yyerrok;
+        yyclearin;
+    }
 ;
 
 instruction
@@ -78,17 +85,37 @@ instruction
          * DB, ORG, END, IF, ELSE and ENDIF are special instructions
          * and must not be defined
          */
-        if (!strcasecmp($1, "_FATCH_") && $4 != 0x0) {
-            yyerror("_FATCH_ instruction address != 0x0");
-            YYERROR;
+        if (!strcasecmp($1, "_FATCH_")) {
+            if ($4 != 0x0) {
+                yyerror("_FATCH_ instruction address != 0x0");
+                YYERROR;
+            }
+
+            if (
+                $2.src != COP2K::OperandType::NONE ||
+                $2.dst != COP2K::OperandType::NONE
+            ) {
+                yyerror("_FATCH_ must have no operands");
+                YYERROR;
+            }
         }
         if ($4 == 0x0 && strcasecmp($1, "_FATCH_")) {
             yyerror("instruction @ 0x0 MUST be _FATCH_");
             YYERROR;
         }
-        if (!strcasecmp($1, "_INT_") && $4 != 0xB8) {
-            yyerror("_INT_ instruction address != 0xB8");
-            YYERROR;
+        if (!strcasecmp($1, "_INT_")) {
+            if ($4 != 0xB8) {
+                yyerror("_INT_ instruction address != 0xB8");
+                YYERROR;
+            }
+
+            if (
+                $2.src != COP2K::OperandType::NONE ||
+                $2.dst != COP2K::OperandType::NONE
+            ) {
+                yyerror("_INT_ must have no operands");
+                YYERROR;
+            }
         }
         if ($4 == 0xB8 && strcasecmp($1, "_INT_")) {
             yyerror("instruction @ 0xB8 MUST be _INT_");
@@ -123,12 +150,18 @@ instruction
             YYERROR;
         }
 
-        for (unsigned char i = 0; i < $6.signal_count; i++)
-            if (!$6.signals[i].elp)
-                if (($4 & 0x8) >> 3 != 1) {
-                    yyerror("to make sure jump unconditionally, (address & 0x8) >> 3 MUST == 1");
-                    YYERROR;
-                }
+        for (unsigned char i = 0; i < $6.signal_count; i++) {
+            if ($6.signals[i].elp)
+                continue;
+
+            if (($4 & 0x8) >> 3 != 1) {
+                yyerror(
+                    "to make sure jump unconditionally, "
+                    "(address & 0x8) >> 3 MUST == 1"
+                );
+                YYERROR;
+            }
+        }
 
         $$.byte = $4;
         $$.mnemonic = $1;
@@ -144,17 +177,37 @@ instruction
          * DB, ORG, END, IF, ELSE and ENDIF are special instructions
          * and must not be defined
          */
-        if (!strcasecmp($1, "_FATCH_") && $4 != 0x0) {
-            yyerror("_FATCH_ instruction address != 0x0");
-            YYERROR;
+        if (!strcasecmp($1, "_FATCH_")) {
+            if ($4 != 0x0) {
+                yyerror("_FATCH_ instruction address != 0x0");
+                YYERROR;
+            }
+
+            if (
+                $2.src != COP2K::OperandType::NONE ||
+                $2.dst != COP2K::OperandType::NONE
+            ) {
+                yyerror("_FATCH_ must have no operands");
+                YYERROR;
+            }
         }
         if ($4 == 0x0 && strcasecmp($1, "_FATCH_")) {
             yyerror("instruction @ 0x0 MUST be _FATCH_");
             YYERROR;
         }
-        if (!strcasecmp($1, "_INT_") && $4 != 0xB8) {
-            yyerror("_INT_ instruction address != 0xB8");
-            YYERROR;
+        if (!strcasecmp($1, "_INT_")) {
+            if ($4 != 0xB8) {
+                yyerror("_INT_ instruction address != 0xB8");
+                YYERROR;
+            }
+
+            if (
+                $2.src != COP2K::OperandType::NONE ||
+                $2.dst != COP2K::OperandType::NONE
+            ) {
+                yyerror("_INT_ must have no operands");
+                YYERROR;
+            }
         }
         if ($4 == 0xB8 && strcasecmp($1, "_INT_")) {
             yyerror("instruction @ 0xB8 MUST be _INT_");
@@ -206,17 +259,37 @@ instruction
          * DB, ORG, END, IF, ELSE and ENDIF are special instructions
          * and must not be defined
          */
-        if (!strcasecmp($1, "_FATCH_") && $4 != 0x0) {
-            yyerror("_FATCH_ instruction address != 0x0");
-            YYERROR;
+        if (!strcasecmp($1, "_FATCH_")) {
+            if ($4 != 0x0) {
+                yyerror("_FATCH_ instruction address != 0x0");
+                YYERROR;
+            }
+
+            if (
+                $2.src != COP2K::OperandType::NONE ||
+                $2.dst != COP2K::OperandType::NONE
+            ) {
+                yyerror("_FATCH_ must have no operands");
+                YYERROR;
+            }
         }
         if ($4 == 0x0 && strcasecmp($1, "_FATCH_")) {
             yyerror("instruction @ 0x0 MUST be _FATCH_");
             YYERROR;
         }
-        if (!strcasecmp($1, "_INT_") && $4 != 0xB8) {
-            yyerror("_INT_ instruction address != 0xB8");
-            YYERROR;
+        if (!strcasecmp($1, "_INT_")) {
+            if ($4 != 0xB8) {
+                yyerror("_INT_ instruction address != 0xB8");
+                YYERROR;
+            }
+
+            if (
+                $2.src != COP2K::OperandType::NONE ||
+                $2.dst != COP2K::OperandType::NONE
+            ) {
+                yyerror("_INT_ must have no operands");
+                YYERROR;
+            }
         }
         if ($4 == 0xB8 && strcasecmp($1, "_INT_")) {
             yyerror("instruction @ 0xB8 MUST be _INT_");
@@ -260,60 +333,55 @@ instruction
         $$.dst = $2.dst;
         $$.microprogram = $7;
     }
-    | error ';' {
-        // error messages has been printed by their perspective rules
-        yyerrok;
-        yyclearin;
-    }
 ;
 
 operand
     : { // nothing, i.e. mnemonic only
-        $$.src = $$.dst = COP2K::Operand::NONE;
+        $$.src = $$.dst = COP2K::OperandType::NONE;
     }
     | OPERAND_REG_A {
-        $$.src = COP2K::Operand::REG_A;
-        $$.dst = COP2K::Operand::NONE;
+        $$.src = COP2K::OperandType::REG_A;
+        $$.dst = COP2K::OperandType::NONE;
     }
     | OPERAND_MEMADDR {
-        $$.src = COP2K::Operand::MEMADDR;
-        $$.dst = COP2K::Operand::NONE;
+        $$.src = COP2K::OperandType::MEMADDR;
+        $$.dst = COP2K::OperandType::NONE;
     }
     | OPERAND_REG {
-        $$.src = COP2K::Operand::REG;
-        $$.dst = COP2K::Operand::NONE;
+        $$.src = COP2K::OperandType::REG;
+        $$.dst = COP2K::OperandType::NONE;
     }
     | OPERAND_IMMED {
-        $$.src = COP2K::Operand::IMMED;
-        $$.dst = COP2K::Operand::NONE;
+        $$.src = COP2K::OperandType::IMMED;
+        $$.dst = COP2K::OperandType::NONE;
     }
     | OPERAND_REGADDR {
-        $$.src = COP2K::Operand::REGADDR;
-        $$.dst = COP2K::Operand::NONE;
+        $$.src = COP2K::OperandType::REGADDR;
+        $$.dst = COP2K::OperandType::NONE;
     }
     | OPERAND_REG_A ',' OPERAND_REG_A {
-        $$.src = COP2K::Operand::REG_A;
-        $$.dst = COP2K::Operand::REG_A;
+        $$.src = COP2K::OperandType::REG_A;
+        $$.dst = COP2K::OperandType::REG_A;
     }
     | OPERAND_REG_A ',' OPERAND_REG {
-        $$.src = COP2K::Operand::REG_A;
-        $$.dst = COP2K::Operand::REG;
+        $$.src = COP2K::OperandType::REG_A;
+        $$.dst = COP2K::OperandType::REG;
     }
     | OPERAND_REG_A ',' OPERAND_REGADDR {
-        $$.src = COP2K::Operand::REG_A;
-        $$.dst = COP2K::Operand::REGADDR;
+        $$.src = COP2K::OperandType::REG_A;
+        $$.dst = COP2K::OperandType::REGADDR;
     }
     | OPERAND_REG_A ',' OPERAND_IMMED {
-        $$.src = COP2K::Operand::REG_A;
-        $$.dst = COP2K::Operand::IMMED;
+        $$.src = COP2K::OperandType::REG_A;
+        $$.dst = COP2K::OperandType::IMMED;
     }
     | OPERAND_REG_A ',' OPERAND_MEMADDR {
-        $$.src = COP2K::Operand::REG_A;
-        $$.dst = COP2K::Operand::MEMADDR;
+        $$.src = COP2K::OperandType::REG_A;
+        $$.dst = COP2K::OperandType::MEMADDR;
     }
     | OPERAND_REG ',' OPERAND_REG_A {
-        $$.src = COP2K::Operand::REG;
-        $$.dst = COP2K::Operand::REG_A;
+        $$.src = COP2K::OperandType::REG;
+        $$.dst = COP2K::OperandType::REG_A;
     }
     | OPERAND_REG ',' OPERAND_REG {
         yyerror("xxx R?, R? cannot be constructed");
@@ -324,16 +392,16 @@ operand
         YYERROR;
     }
     | OPERAND_REG ',' OPERAND_IMMED {
-        $$.src = COP2K::Operand::REG;
-        $$.dst = COP2K::Operand::IMMED;
+        $$.src = COP2K::OperandType::REG;
+        $$.dst = COP2K::OperandType::IMMED;
     }
     | OPERAND_REG ',' OPERAND_MEMADDR {
-        $$.src = COP2K::Operand::REG;
-        $$.dst = COP2K::Operand::MEMADDR;
+        $$.src = COP2K::OperandType::REG;
+        $$.dst = COP2K::OperandType::MEMADDR;
     }
     | OPERAND_REGADDR ',' OPERAND_REG_A {
-        $$.src = COP2K::Operand::REGADDR;
-        $$.dst = COP2K::Operand::REG_A;
+        $$.src = COP2K::OperandType::REGADDR;
+        $$.dst = COP2K::OperandType::REG_A;
     }
     | OPERAND_REGADDR ',' OPERAND_REG {
         yyerror("xxx @R?, R? cannot be constructed");
@@ -344,68 +412,58 @@ operand
         YYERROR;
     }
     | OPERAND_REGADDR ',' OPERAND_IMMED {
-        $$.src = COP2K::Operand::REGADDR;
-        $$.dst = COP2K::Operand::IMMED;
+        $$.src = COP2K::OperandType::REGADDR;
+        $$.dst = COP2K::OperandType::IMMED;
     }
     | OPERAND_REGADDR ',' OPERAND_MEMADDR {
-        $$.src = COP2K::Operand::REGADDR;
-        $$.dst = COP2K::Operand::MEMADDR;
+        $$.src = COP2K::OperandType::REGADDR;
+        $$.dst = COP2K::OperandType::MEMADDR;
     }
     | OPERAND_IMMED ',' OPERAND_REG_A {
-        $$.src = COP2K::Operand::IMMED;
-        $$.dst = COP2K::Operand::REG_A;
+        $$.src = COP2K::OperandType::IMMED;
+        $$.dst = COP2K::OperandType::REG_A;
     }
     | OPERAND_IMMED ',' OPERAND_REG {
-        $$.src = COP2K::Operand::IMMED;
-        $$.dst = COP2K::Operand::REG;
+        $$.src = COP2K::OperandType::IMMED;
+        $$.dst = COP2K::OperandType::REG;
     }
     | OPERAND_IMMED ',' OPERAND_REGADDR {
-        $$.src = COP2K::Operand::IMMED;
-        $$.dst = COP2K::Operand::REGADDR;
+        $$.src = COP2K::OperandType::IMMED;
+        $$.dst = COP2K::OperandType::REGADDR;
     }
     | OPERAND_IMMED ',' OPERAND_IMMED {
-        $$.src = COP2K::Operand::IMMED;
-        $$.dst = COP2K::Operand::IMMED;
+        $$.src = COP2K::OperandType::IMMED;
+        $$.dst = COP2K::OperandType::IMMED;
     }
     | OPERAND_IMMED ',' OPERAND_MEMADDR {
-        $$.src = COP2K::Operand::IMMED;
-        $$.dst = COP2K::Operand::MEMADDR;
+        $$.src = COP2K::OperandType::IMMED;
+        $$.dst = COP2K::OperandType::MEMADDR;
     }
     | OPERAND_MEMADDR ',' OPERAND_REG_A {
-        $$.src = COP2K::Operand::MEMADDR;
-        $$.dst = COP2K::Operand::REG_A;
+        $$.src = COP2K::OperandType::MEMADDR;
+        $$.dst = COP2K::OperandType::REG_A;
     }
     | OPERAND_MEMADDR ',' OPERAND_REG {
-        $$.src = COP2K::Operand::MEMADDR;
-        $$.dst = COP2K::Operand::REG;
+        $$.src = COP2K::OperandType::MEMADDR;
+        $$.dst = COP2K::OperandType::REG;
     }
     | OPERAND_MEMADDR ',' OPERAND_REGADDR {
-        $$.src = COP2K::Operand::MEMADDR;
-        $$.dst = COP2K::Operand::REGADDR;
+        $$.src = COP2K::OperandType::MEMADDR;
+        $$.dst = COP2K::OperandType::REGADDR;
     }
     | OPERAND_MEMADDR ',' OPERAND_IMMED {
-        $$.src = COP2K::Operand::MEMADDR;
-        $$.dst = COP2K::Operand::IMMED;
+        $$.src = COP2K::OperandType::MEMADDR;
+        $$.dst = COP2K::OperandType::IMMED;
     }
     | OPERAND_MEMADDR ',' OPERAND_MEMADDR {
-        $$.src = COP2K::Operand::MEMADDR;
-        $$.dst = COP2K::Operand::MEMADDR;
+        $$.src = COP2K::OperandType::MEMADDR;
+        $$.dst = COP2K::OperandType::MEMADDR;
     }
 ;
 
+// we DO ALLOW empty micro program
 micro_program
-    : micro_program_signal {
-        $$.clear();
-
-        if (!$1.signal.empty()) {
-            if ($$.signal_count++ != $1.index) {
-                yyerror("micro program index not continous");
-                YYERROR;
-            }
-
-            $$.signals[$1.index] = $1.signal;
-        }
-    }
+    : { $$.clear(); }
     | micro_program micro_program_signal {
         $$ = $1;
 
@@ -432,87 +490,9 @@ micro_program_signal
     }
 ;
 
+// and we also ALLOW empty signal
 signals
-    : signal {
-        $$.clear();
-
-        if (!strcasecmp($1.name, "emwr"))
-            $$.emwr = $1.val;
-
-        else if (!strcasecmp($1.name, "emrd"))
-            $$.emrd = $1.val;
-
-        else if (!strcasecmp($1.name, "pcoe"))
-            $$.pcoe = $1.val;
-
-        else if (!strcasecmp($1.name, "emen"))
-            $$.emen = $1.val;
-
-        else if (!strcasecmp($1.name, "iren"))
-            $$.iren = $1.val;
-
-        else if (!strcasecmp($1.name, "eint"))
-            $$.eint = $1.val;
-
-        else if (!strcasecmp($1.name, "elp"))
-            $$.elp = $1.val;
-
-        else if (!strcasecmp($1.name, "maren"))
-            $$.maren = $1.val;
-
-        else if (!strcasecmp($1.name, "maroe"))
-            $$.maroe = $1.val;
-
-        else if (!strcasecmp($1.name, "outen"))
-            $$.outen = $1.val;
-
-        else if (!strcasecmp($1.name, "sten"))
-            $$.sten = $1.val;
-
-        else if (!strcasecmp($1.name, "rrd"))
-            $$.rrd = $1.val;
-
-        else if (!strcasecmp($1.name, "rwr"))
-            $$.rwr = $1.val;
-
-        else if (!strcasecmp($1.name, "cn"))
-            $$.cn = $1.val;
-
-        else if (!strcasecmp($1.name, "fen"))
-            $$.fen = $1.val;
-
-        else if (!strcasecmp($1.name, "x2"))
-            $$.x2 = $1.val;
-
-        else if (!strcasecmp($1.name, "x1"))
-            $$.x1 = $1.val;
-
-        else if (!strcasecmp($1.name, "x0"))
-            $$.x0 = $1.val;
-
-        else if (!strcasecmp($1.name, "wen"))
-            $$.wen = $1.val;
-
-        else if (!strcasecmp($1.name, "aen"))
-            $$.aen = $1.val;
-
-        else if (!strcasecmp($1.name, "s2"))
-            $$.s2 = $1.val;
-
-        else if (!strcasecmp($1.name, "s1"))
-            $$.s1 = $1.val;
-
-        else if (!strcasecmp($1.name, "s0"))
-            $$.s0 = $1.val;
-
-        else {
-            yyerror("Invalid signal name");
-            YYERROR;
-        }
-
-        free($1.name);
-        $1.name = nullptr;
-    }
+    : { $$.clear(); }
     | signals signal {
         $$ = $1;
 
@@ -612,12 +592,13 @@ void COP2K::parse_instruction_file(FILE *in, COP2K::Opcode *opcode)
 {
     yyinstrset_lineno(1);
     yyinstrset_in(in);
+    has_error = false;
     current_opcode = opcode;
 
     int result = yyparse();
 
     current_opcode = nullptr;
 
-    if (result)
+    if (result || has_error)
         throw std::runtime_error("failed to parse file");
 }

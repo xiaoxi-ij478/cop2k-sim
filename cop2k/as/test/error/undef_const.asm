@@ -1,0 +1,2 @@
+mov a, nonexistent
+

@@ -16,6 +16,7 @@ extern FILE *yyasmin;
 static bool no_eval;
 static std::stack<bool> block_status;
 static COP2K::AS *current_as = nullptr;
+static bool has_error = false;
 
 static bool block_active() { return block_status.empty() || block_status.top(); }
 static void push_block(bool val) { block_status.push(val); }
@@ -126,46 +127,47 @@ instruction
         $$.is_empty = false;
         $$.mnemonic = strdup("00label");
         $$.label = $1;
-        $$.operand.src_type = $$.operand.dst_type = COP2K::Operand::NONE;
+        $$.operand.src_type = $$.operand.dst_type = COP2K::OperandType::NONE;
     }
     | IDENTIFIER EQU expression '\n' {
         $$.is_empty = false;
         $$.mnemonic = strdup("00const");
         $$.label = $1;
-        $$.operand.src_type = COP2K::Operand::IMMED;
-        $$.operand.dst_type = COP2K::Operand::NONE;
+        $$.operand.src_type = COP2K::OperandType::IMMED;
+        $$.operand.dst_type = COP2K::OperandType::NONE;
         $$.operand.src = $3;
     }
     | DB expression '\n' {
         $$.is_empty = false;
         $$.mnemonic = strdup("db");
         $$.label = nullptr;
-        $$.operand.src_type = COP2K::Operand::MEMADDR;
-        $$.operand.dst_type = COP2K::Operand::NONE;
+        $$.operand.src_type = COP2K::OperandType::MEMADDR;
+        $$.operand.dst_type = COP2K::OperandType::NONE;
         $$.operand.src = $2;
     }
     | ORG expression '\n' {
         $$.is_empty = false;
         $$.mnemonic = strdup("org");
         $$.label = nullptr;
-        $$.operand.src_type = COP2K::Operand::MEMADDR;
-        $$.operand.dst_type = COP2K::Operand::NONE;
+        $$.operand.src_type = COP2K::OperandType::MEMADDR;
+        $$.operand.dst_type = COP2K::OperandType::NONE;
         $$.operand.src = $2;
     }
     | END '\n' {
+        // original version of assembler halts RIGHT AFTER 'END'
         YYACCEPT;
 
         // $$.is_empty = false;
         // $$.mnemonic = strdup("end");
         // $$.label = nullptr;
-        // $$.operand.src_type = $$.operand.dst_type = COP2K::Operand::NONE;
+        // $$.operand.src_type = $$.operand.dst_type = COP2K::OperandType::NONE;
     }
     | IF expression '\n' {
         $$.is_empty = false;
         $$.mnemonic = strdup("if");
         $$.label = nullptr;
-        $$.operand.src_type = COP2K::Operand::IMMED;
-        $$.operand.dst_type = COP2K::Operand::NONE;
+        $$.operand.src_type = COP2K::OperandType::IMMED;
+        $$.operand.dst_type = COP2K::OperandType::NONE;
         $$.operand.src = $2;
 
         push_block($2);
@@ -174,7 +176,7 @@ instruction
         $$.is_empty = false;
         $$.mnemonic = strdup("else");
         $$.label = nullptr;
-        $$.operand.src_type = $$.operand.dst_type = COP2K::Operand::NONE;
+        $$.operand.src_type = $$.operand.dst_type = COP2K::OperandType::NONE;
 
         if (no_block()) {
             free($$.mnemonic);
@@ -192,7 +194,7 @@ instruction
         $$.is_empty = false;
         $$.mnemonic = strdup("endif");
         $$.label = nullptr;
-        $$.operand.src_type = $$.operand.dst_type = COP2K::Operand::NONE;
+        $$.operand.src_type = $$.operand.dst_type = COP2K::OperandType::NONE;
 
         if (no_block()) {
             free($$.mnemonic);
@@ -207,6 +209,7 @@ instruction
     | error '\n' {
         $$.is_empty = true;
         // error messages has been printed by their perspective rules
+        has_error = true;
         yyerrok;
         yyclearin;
     }
@@ -214,119 +217,119 @@ instruction
 
 operand
     : { // none
-        $$.src_type = $$.dst_type = COP2K::Operand::NONE;
+        $$.src_type = $$.dst_type = COP2K::OperandType::NONE;
     }
     | 'a' {
-        $$.src_type = COP2K::Operand::REG_A;
-        $$.dst_type = COP2K::Operand::NONE;
+        $$.src_type = COP2K::OperandType::REG_A;
+        $$.dst_type = COP2K::OperandType::NONE;
     }
     | R0 {
-        $$.src_type = COP2K::Operand::REG;
-        $$.dst_type = COP2K::Operand::NONE;
+        $$.src_type = COP2K::OperandType::REG;
+        $$.dst_type = COP2K::OperandType::NONE;
         $$.src = 0;
     }
     | R1 {
-        $$.src_type = COP2K::Operand::REG;
-        $$.dst_type = COP2K::Operand::NONE;
+        $$.src_type = COP2K::OperandType::REG;
+        $$.dst_type = COP2K::OperandType::NONE;
         $$.src = 1;
     }
     | R2 {
-        $$.src_type = COP2K::Operand::REG;
-        $$.dst_type = COP2K::Operand::NONE;
+        $$.src_type = COP2K::OperandType::REG;
+        $$.dst_type = COP2K::OperandType::NONE;
         $$.src = 2;
     }
     | R3 {
-        $$.src_type = COP2K::Operand::REG;
-        $$.dst_type = COP2K::Operand::NONE;
+        $$.src_type = COP2K::OperandType::REG;
+        $$.dst_type = COP2K::OperandType::NONE;
         $$.src = 3;
     }
     | AT_R0 {
-        $$.src_type = COP2K::Operand::REGADDR;
-        $$.dst_type = COP2K::Operand::NONE;
+        $$.src_type = COP2K::OperandType::REGADDR;
+        $$.dst_type = COP2K::OperandType::NONE;
         $$.src = 0;
     }
     | AT_R1 {
-        $$.src_type = COP2K::Operand::REGADDR;
-        $$.dst_type = COP2K::Operand::NONE;
+        $$.src_type = COP2K::OperandType::REGADDR;
+        $$.dst_type = COP2K::OperandType::NONE;
         $$.src = 1;
     }
     | AT_R2 {
-        $$.src_type = COP2K::Operand::REGADDR;
-        $$.dst_type = COP2K::Operand::NONE;
+        $$.src_type = COP2K::OperandType::REGADDR;
+        $$.dst_type = COP2K::OperandType::NONE;
         $$.src = 2;
     }
     | AT_R3 {
-        $$.src_type = COP2K::Operand::REGADDR;
-        $$.dst_type = COP2K::Operand::NONE;
+        $$.src_type = COP2K::OperandType::REGADDR;
+        $$.dst_type = COP2K::OperandType::NONE;
         $$.src = 3;
     }
     | '#' expression {
-        $$.src_type = COP2K::Operand::IMMED;
-        $$.dst_type = COP2K::Operand::NONE;
+        $$.src_type = COP2K::OperandType::IMMED;
+        $$.dst_type = COP2K::OperandType::NONE;
         $$.src = $2;
     }
     | expression {
-        $$.src_type = COP2K::Operand::MEMADDR;
-        $$.dst_type = COP2K::Operand::NONE;
+        $$.src_type = COP2K::OperandType::MEMADDR;
+        $$.dst_type = COP2K::OperandType::NONE;
         $$.src = $1;
     }
     | 'a' ',' 'a' {
-        $$.src_type = COP2K::Operand::REG_A;
-        $$.dst_type = COP2K::Operand::REG_A;
+        $$.src_type = COP2K::OperandType::REG_A;
+        $$.dst_type = COP2K::OperandType::REG_A;
     }
     | 'a' ',' R0 {
-        $$.src_type = COP2K::Operand::REG_A;
-        $$.dst_type = COP2K::Operand::REG;
+        $$.src_type = COP2K::OperandType::REG_A;
+        $$.dst_type = COP2K::OperandType::REG;
         $$.dst = 0;
     }
     | 'a' ',' R1 {
-        $$.src_type = COP2K::Operand::REG_A;
-        $$.dst_type = COP2K::Operand::REG;
+        $$.src_type = COP2K::OperandType::REG_A;
+        $$.dst_type = COP2K::OperandType::REG;
         $$.dst = 1;
     }
     | 'a' ',' R2 {
-        $$.src_type = COP2K::Operand::REG_A;
-        $$.dst_type = COP2K::Operand::REG;
+        $$.src_type = COP2K::OperandType::REG_A;
+        $$.dst_type = COP2K::OperandType::REG;
         $$.dst = 2;
     }
     | 'a' ',' R3 {
-        $$.src_type = COP2K::Operand::REG_A;
-        $$.dst_type = COP2K::Operand::REG;
+        $$.src_type = COP2K::OperandType::REG_A;
+        $$.dst_type = COP2K::OperandType::REG;
         $$.dst = 3;
     }
     | 'a' ',' AT_R0 {
-        $$.src_type = COP2K::Operand::REG_A;
-        $$.dst_type = COP2K::Operand::REGADDR;
+        $$.src_type = COP2K::OperandType::REG_A;
+        $$.dst_type = COP2K::OperandType::REGADDR;
         $$.dst = 0;
     }
     | 'a' ',' AT_R1 {
-        $$.src_type = COP2K::Operand::REG_A;
-        $$.dst_type = COP2K::Operand::REGADDR;
+        $$.src_type = COP2K::OperandType::REG_A;
+        $$.dst_type = COP2K::OperandType::REGADDR;
         $$.dst = 1;
     }
     | 'a' ',' AT_R2 {
-        $$.src_type = COP2K::Operand::REG_A;
-        $$.dst_type = COP2K::Operand::REGADDR;
+        $$.src_type = COP2K::OperandType::REG_A;
+        $$.dst_type = COP2K::OperandType::REGADDR;
         $$.dst = 2;
     }
     | 'a' ',' AT_R3 {
-        $$.src_type = COP2K::Operand::REG_A;
-        $$.dst_type = COP2K::Operand::REGADDR;
+        $$.src_type = COP2K::OperandType::REG_A;
+        $$.dst_type = COP2K::OperandType::REGADDR;
         $$.dst = 3;
     }
     | 'a' ',' '#' expression {
-        $$.src_type = COP2K::Operand::REG_A;
-        $$.dst_type = COP2K::Operand::IMMED;
+        $$.src_type = COP2K::OperandType::REG_A;
+        $$.dst_type = COP2K::OperandType::IMMED;
         $$.dst = $4;
     }
     | 'a' ',' expression {
-        $$.src_type = COP2K::Operand::REG_A;
-        $$.dst_type = COP2K::Operand::MEMADDR;
+        $$.src_type = COP2K::OperandType::REG_A;
+        $$.dst_type = COP2K::OperandType::MEMADDR;
         $$.dst = $3;
     }
     | R0 ',' 'a' {
-        $$.src_type = COP2K::Operand::REG;
-        $$.dst_type = COP2K::Operand::REG_A;
+        $$.src_type = COP2K::OperandType::REG;
+        $$.dst_type = COP2K::OperandType::REG_A;
         $$.src = 0;
     }
     | R0 ',' R0     { RN_RN_NOT_SUPPORTED(0, 0); }
@@ -338,20 +341,20 @@ operand
     | R0 ',' AT_R2  { RN_ARN_NOT_SUPPORTED(0, 2); }
     | R0 ',' AT_R3  { RN_ARN_NOT_SUPPORTED(0, 3); }
     | R0 ',' '#' expression {
-        $$.src_type = COP2K::Operand::REG;
-        $$.dst_type = COP2K::Operand::IMMED;
+        $$.src_type = COP2K::OperandType::REG;
+        $$.dst_type = COP2K::OperandType::IMMED;
         $$.src = 0;
         $$.dst = $4;
     }
     | R0 ',' expression {
-        $$.src_type = COP2K::Operand::REG;
-        $$.dst_type = COP2K::Operand::MEMADDR;
+        $$.src_type = COP2K::OperandType::REG;
+        $$.dst_type = COP2K::OperandType::MEMADDR;
         $$.src = 0;
         $$.dst = $3;
     }
     | R1 ',' 'a' {
-        $$.src_type = COP2K::Operand::REG;
-        $$.dst_type = COP2K::Operand::REG_A;
+        $$.src_type = COP2K::OperandType::REG;
+        $$.dst_type = COP2K::OperandType::REG_A;
         $$.src = 1;
     }
     | R1 ',' R0     { RN_RN_NOT_SUPPORTED(1, 0); }
@@ -363,20 +366,20 @@ operand
     | R1 ',' AT_R2  { RN_ARN_NOT_SUPPORTED(1, 2); }
     | R1 ',' AT_R3  { RN_ARN_NOT_SUPPORTED(1, 3); }
     | R1 ',' '#' expression {
-        $$.src_type = COP2K::Operand::REG;
-        $$.dst_type = COP2K::Operand::IMMED;
+        $$.src_type = COP2K::OperandType::REG;
+        $$.dst_type = COP2K::OperandType::IMMED;
         $$.src = 1;
         $$.dst = $4;
     }
     | R1 ',' expression {
-        $$.src_type = COP2K::Operand::REG;
-        $$.dst_type = COP2K::Operand::MEMADDR;
+        $$.src_type = COP2K::OperandType::REG;
+        $$.dst_type = COP2K::OperandType::MEMADDR;
         $$.src = 1;
         $$.dst = $3;
     }
     | R2 ',' 'a' {
-        $$.src_type = COP2K::Operand::REG;
-        $$.dst_type = COP2K::Operand::REG_A;
+        $$.src_type = COP2K::OperandType::REG;
+        $$.dst_type = COP2K::OperandType::REG_A;
         $$.src = 2;
     }
     | R2 ',' R0     { RN_RN_NOT_SUPPORTED(2, 0); }
@@ -388,20 +391,20 @@ operand
     | R2 ',' AT_R2  { RN_ARN_NOT_SUPPORTED(2, 2); }
     | R2 ',' AT_R3  { RN_ARN_NOT_SUPPORTED(2, 3); }
     | R2 ',' '#' expression {
-        $$.src_type = COP2K::Operand::REG;
-        $$.dst_type = COP2K::Operand::IMMED;
+        $$.src_type = COP2K::OperandType::REG;
+        $$.dst_type = COP2K::OperandType::IMMED;
         $$.src = 2;
         $$.dst = $4;
     }
     | R2 ',' expression {
-        $$.src_type = COP2K::Operand::REG;
-        $$.dst_type = COP2K::Operand::MEMADDR;
+        $$.src_type = COP2K::OperandType::REG;
+        $$.dst_type = COP2K::OperandType::MEMADDR;
         $$.src = 2;
         $$.dst = $3;
     }
     | R3 ',' 'a' {
-        $$.src_type = COP2K::Operand::REG;
-        $$.dst_type = COP2K::Operand::REG_A;
+        $$.src_type = COP2K::OperandType::REG;
+        $$.dst_type = COP2K::OperandType::REG_A;
         $$.src = 3;
     }
     | R3 ',' R0     { RN_RN_NOT_SUPPORTED(3, 0); }
@@ -413,20 +416,20 @@ operand
     | R3 ',' AT_R2  { RN_ARN_NOT_SUPPORTED(3, 2); }
     | R3 ',' AT_R3  { RN_ARN_NOT_SUPPORTED(3, 3); }
     | R3 ',' '#' expression {
-        $$.src_type = COP2K::Operand::REG;
-        $$.dst_type = COP2K::Operand::IMMED;
+        $$.src_type = COP2K::OperandType::REG;
+        $$.dst_type = COP2K::OperandType::IMMED;
         $$.src = 3;
         $$.dst = $4;
     }
     | R3 ',' expression {
-        $$.src_type = COP2K::Operand::REG;
-        $$.dst_type = COP2K::Operand::MEMADDR;
+        $$.src_type = COP2K::OperandType::REG;
+        $$.dst_type = COP2K::OperandType::MEMADDR;
         $$.src = 3;
         $$.dst = $3;
     }
     | AT_R0 ',' 'a' {
-        $$.src_type = COP2K::Operand::REGADDR;
-        $$.dst_type = COP2K::Operand::REG_A;
+        $$.src_type = COP2K::OperandType::REGADDR;
+        $$.dst_type = COP2K::OperandType::REG_A;
         $$.src = 0;
     }
     | AT_R0 ',' R0     { ARN_RN_NOT_SUPPORTED(0, 0); }
@@ -438,20 +441,20 @@ operand
     | AT_R0 ',' AT_R2  { ARN_ARN_NOT_SUPPORTED(0, 2); }
     | AT_R0 ',' AT_R3  { ARN_ARN_NOT_SUPPORTED(0, 3); }
     | AT_R0 ',' '#' expression {
-        $$.src_type = COP2K::Operand::REGADDR;
-        $$.dst_type = COP2K::Operand::IMMED;
+        $$.src_type = COP2K::OperandType::REGADDR;
+        $$.dst_type = COP2K::OperandType::IMMED;
         $$.src = 0;
         $$.dst = $4;
     }
     | AT_R0 ',' expression {
-        $$.src_type = COP2K::Operand::REGADDR;
-        $$.dst_type = COP2K::Operand::MEMADDR;
+        $$.src_type = COP2K::OperandType::REGADDR;
+        $$.dst_type = COP2K::OperandType::MEMADDR;
         $$.src = 0;
         $$.dst = $3;
     }
     | AT_R1 ',' 'a' {
-        $$.src_type = COP2K::Operand::REGADDR;
-        $$.dst_type = COP2K::Operand::REG_A;
+        $$.src_type = COP2K::OperandType::REGADDR;
+        $$.dst_type = COP2K::OperandType::REG_A;
         $$.src = 1;
     }
     | AT_R1 ',' R0     { ARN_RN_NOT_SUPPORTED(1, 0); }
@@ -463,20 +466,20 @@ operand
     | AT_R1 ',' AT_R2  { ARN_ARN_NOT_SUPPORTED(1, 2); }
     | AT_R1 ',' AT_R3  { ARN_ARN_NOT_SUPPORTED(1, 3); }
     | AT_R1 ',' '#' expression {
-        $$.src_type = COP2K::Operand::REGADDR;
-        $$.dst_type = COP2K::Operand::IMMED;
+        $$.src_type = COP2K::OperandType::REGADDR;
+        $$.dst_type = COP2K::OperandType::IMMED;
         $$.src = 1;
         $$.dst = $4;
     }
     | AT_R1 ',' expression {
-        $$.src_type = COP2K::Operand::REGADDR;
-        $$.dst_type = COP2K::Operand::MEMADDR;
+        $$.src_type = COP2K::OperandType::REGADDR;
+        $$.dst_type = COP2K::OperandType::MEMADDR;
         $$.src = 1;
         $$.dst = $3;
     }
     | AT_R2 ',' 'a' {
-        $$.src_type = COP2K::Operand::REGADDR;
-        $$.dst_type = COP2K::Operand::REG_A;
+        $$.src_type = COP2K::OperandType::REGADDR;
+        $$.dst_type = COP2K::OperandType::REG_A;
         $$.src = 2;
     }
     | AT_R2 ',' R0     { ARN_RN_NOT_SUPPORTED(2, 0); }
@@ -488,20 +491,20 @@ operand
     | AT_R2 ',' AT_R2  { ARN_ARN_NOT_SUPPORTED(2, 2); }
     | AT_R2 ',' AT_R3  { ARN_ARN_NOT_SUPPORTED(2, 3); }
     | AT_R2 ',' '#' expression {
-        $$.src_type = COP2K::Operand::REGADDR;
-        $$.dst_type = COP2K::Operand::IMMED;
+        $$.src_type = COP2K::OperandType::REGADDR;
+        $$.dst_type = COP2K::OperandType::IMMED;
         $$.src = 2;
         $$.dst = $4;
     }
     | AT_R2 ',' expression {
-        $$.src_type = COP2K::Operand::REGADDR;
-        $$.dst_type = COP2K::Operand::MEMADDR;
+        $$.src_type = COP2K::OperandType::REGADDR;
+        $$.dst_type = COP2K::OperandType::MEMADDR;
         $$.src = 2;
         $$.dst = $3;
     }
     | AT_R3 ',' 'a' {
-        $$.src_type = COP2K::Operand::REGADDR;
-        $$.dst_type = COP2K::Operand::REG_A;
+        $$.src_type = COP2K::OperandType::REGADDR;
+        $$.dst_type = COP2K::OperandType::REG_A;
         $$.src = 3;
     }
     | AT_R3 ',' R0     { ARN_RN_NOT_SUPPORTED(3, 0); }
@@ -513,144 +516,144 @@ operand
     | AT_R3 ',' AT_R2  { ARN_ARN_NOT_SUPPORTED(3, 2); }
     | AT_R3 ',' AT_R3  { ARN_ARN_NOT_SUPPORTED(3, 3); }
     | AT_R3 ',' '#' expression {
-        $$.src_type = COP2K::Operand::REGADDR;
-        $$.dst_type = COP2K::Operand::IMMED;
+        $$.src_type = COP2K::OperandType::REGADDR;
+        $$.dst_type = COP2K::OperandType::IMMED;
         $$.src = 3;
         $$.dst = $4;
     }
     | AT_R3 ',' expression {
-        $$.src_type = COP2K::Operand::REGADDR;
-        $$.dst_type = COP2K::Operand::MEMADDR;
+        $$.src_type = COP2K::OperandType::REGADDR;
+        $$.dst_type = COP2K::OperandType::MEMADDR;
         $$.src = 3;
         $$.dst = $3;
     }
     | '#' expression ',' 'a' {
-        $$.src_type = COP2K::Operand::IMMED;
-        $$.dst_type = COP2K::Operand::REG_A;
+        $$.src_type = COP2K::OperandType::IMMED;
+        $$.dst_type = COP2K::OperandType::REG_A;
         $$.src = $2;
     }
     | '#' expression ',' R0 {
-        $$.src_type = COP2K::Operand::IMMED;
-        $$.dst_type = COP2K::Operand::REG;
+        $$.src_type = COP2K::OperandType::IMMED;
+        $$.dst_type = COP2K::OperandType::REG;
         $$.src = $2;
         $$.dst = 0;
     }
     | '#' expression ',' R1 {
-        $$.src_type = COP2K::Operand::IMMED;
-        $$.dst_type = COP2K::Operand::REG;
+        $$.src_type = COP2K::OperandType::IMMED;
+        $$.dst_type = COP2K::OperandType::REG;
         $$.src = $2;
         $$.dst = 1;
     }
     | '#' expression ',' R2 {
-        $$.src_type = COP2K::Operand::IMMED;
-        $$.dst_type = COP2K::Operand::REG;
+        $$.src_type = COP2K::OperandType::IMMED;
+        $$.dst_type = COP2K::OperandType::REG;
         $$.src = $2;
         $$.dst = 2;
     }
     | '#' expression ',' R3 {
-        $$.src_type = COP2K::Operand::IMMED;
-        $$.dst_type = COP2K::Operand::REG;
+        $$.src_type = COP2K::OperandType::IMMED;
+        $$.dst_type = COP2K::OperandType::REG;
         $$.src = $2;
         $$.dst = 3;
     }
     | '#' expression ',' AT_R0 {
-        $$.src_type = COP2K::Operand::IMMED;
-        $$.dst_type = COP2K::Operand::REGADDR;
+        $$.src_type = COP2K::OperandType::IMMED;
+        $$.dst_type = COP2K::OperandType::REGADDR;
         $$.src = $2;
         $$.dst = 0;
     }
     | '#' expression ',' AT_R1 {
-        $$.src_type = COP2K::Operand::IMMED;
-        $$.dst_type = COP2K::Operand::REGADDR;
+        $$.src_type = COP2K::OperandType::IMMED;
+        $$.dst_type = COP2K::OperandType::REGADDR;
         $$.src = $2;
         $$.dst = 1;
     }
     | '#' expression ',' AT_R2 {
-        $$.src_type = COP2K::Operand::IMMED;
-        $$.dst_type = COP2K::Operand::REGADDR;
+        $$.src_type = COP2K::OperandType::IMMED;
+        $$.dst_type = COP2K::OperandType::REGADDR;
         $$.src = $2;
         $$.dst = 2;
     }
     | '#' expression ',' AT_R3 {
-        $$.src_type = COP2K::Operand::IMMED;
-        $$.dst_type = COP2K::Operand::REGADDR;
+        $$.src_type = COP2K::OperandType::IMMED;
+        $$.dst_type = COP2K::OperandType::REGADDR;
         $$.src = $2;
         $$.dst = 3;
     }
     | '#' expression ',' '#' expression {
-        $$.src_type = COP2K::Operand::IMMED;
-        $$.dst_type = COP2K::Operand::IMMED;
+        $$.src_type = COP2K::OperandType::IMMED;
+        $$.dst_type = COP2K::OperandType::IMMED;
         $$.src = $2;
         $$.dst = $5;
     }
     | '#' expression ',' expression {
-        $$.src_type = COP2K::Operand::IMMED;
-        $$.dst_type = COP2K::Operand::MEMADDR;
+        $$.src_type = COP2K::OperandType::IMMED;
+        $$.dst_type = COP2K::OperandType::MEMADDR;
         $$.src = $2;
         $$.dst = $4;
     }
     | expression ',' 'a' {
-        $$.src_type = COP2K::Operand::MEMADDR;
-        $$.dst_type = COP2K::Operand::REG_A;
+        $$.src_type = COP2K::OperandType::MEMADDR;
+        $$.dst_type = COP2K::OperandType::REG_A;
         $$.src = $1;
     }
     | expression ',' R0 {
-        $$.src_type = COP2K::Operand::MEMADDR;
-        $$.dst_type = COP2K::Operand::REG;
+        $$.src_type = COP2K::OperandType::MEMADDR;
+        $$.dst_type = COP2K::OperandType::REG;
         $$.src = $1;
         $$.dst = 0;
     }
     | expression ',' R1 {
-        $$.src_type = COP2K::Operand::MEMADDR;
-        $$.dst_type = COP2K::Operand::REG;
+        $$.src_type = COP2K::OperandType::MEMADDR;
+        $$.dst_type = COP2K::OperandType::REG;
         $$.src = $1;
         $$.dst = 1;
     }
     | expression ',' R2 {
-        $$.src_type = COP2K::Operand::MEMADDR;
-        $$.dst_type = COP2K::Operand::REG;
+        $$.src_type = COP2K::OperandType::MEMADDR;
+        $$.dst_type = COP2K::OperandType::REG;
         $$.src = $1;
         $$.dst = 2;
     }
     | expression ',' R3 {
-        $$.src_type = COP2K::Operand::MEMADDR;
-        $$.dst_type = COP2K::Operand::REG;
+        $$.src_type = COP2K::OperandType::MEMADDR;
+        $$.dst_type = COP2K::OperandType::REG;
         $$.src = $1;
         $$.dst = 3;
     }
     | expression ',' AT_R0 {
-        $$.src_type = COP2K::Operand::MEMADDR;
-        $$.dst_type = COP2K::Operand::REGADDR;
+        $$.src_type = COP2K::OperandType::MEMADDR;
+        $$.dst_type = COP2K::OperandType::REGADDR;
         $$.src = $1;
         $$.dst = 0;
     }
     | expression ',' AT_R1 {
-        $$.src_type = COP2K::Operand::MEMADDR;
-        $$.dst_type = COP2K::Operand::REGADDR;
+        $$.src_type = COP2K::OperandType::MEMADDR;
+        $$.dst_type = COP2K::OperandType::REGADDR;
         $$.src = $1;
         $$.dst = 1;
     }
     | expression ',' AT_R2 {
-        $$.src_type = COP2K::Operand::MEMADDR;
-        $$.dst_type = COP2K::Operand::REGADDR;
+        $$.src_type = COP2K::OperandType::MEMADDR;
+        $$.dst_type = COP2K::OperandType::REGADDR;
         $$.src = $1;
         $$.dst = 2;
     }
     | expression ',' AT_R3 {
-        $$.src_type = COP2K::Operand::MEMADDR;
-        $$.dst_type = COP2K::Operand::REGADDR;
+        $$.src_type = COP2K::OperandType::MEMADDR;
+        $$.dst_type = COP2K::OperandType::REGADDR;
         $$.src = $1;
         $$.dst = 3;
     }
     | expression ',' '#' expression {
-        $$.src_type = COP2K::Operand::MEMADDR;
-        $$.dst_type = COP2K::Operand::IMMED;
+        $$.src_type = COP2K::OperandType::MEMADDR;
+        $$.dst_type = COP2K::OperandType::IMMED;
         $$.src = $1;
         $$.dst = $4;
     }
     | expression ',' expression {
-        $$.src_type = COP2K::Operand::MEMADDR;
-        $$.dst_type = COP2K::Operand::MEMADDR;
+        $$.src_type = COP2K::OperandType::MEMADDR;
+        $$.dst_type = COP2K::OperandType::MEMADDR;
         $$.src = $1;
         $$.dst = $3;
     }
@@ -722,6 +725,7 @@ void COP2K::assemble(FILE *in, AS *as, bool no_eval_val)
 {
     yyasmset_lineno(1);
     yyasmset_in(in);
+    has_error = false;
     no_eval = no_eval_val;
     current_as = as;
 
@@ -729,6 +733,6 @@ void COP2K::assemble(FILE *in, AS *as, bool no_eval_val)
 
     current_as = nullptr;
 
-    if (result)
+    if (result || has_error)
         throw std::runtime_error("failed to assemble file");
 }

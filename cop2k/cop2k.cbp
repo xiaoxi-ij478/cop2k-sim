@@ -135,6 +135,10 @@
 				<Compiler>
 					<Add option="-ggdb3" />
 				</Compiler>
+				<Linker>
+					<Add directory="../libcop2k/bin/Debug" />
+					<Add directory="../libopcode/bin/Debug" />
+				</Linker>
 			</Target>
 			<Target title="Signal explain Release">
 				<Option output="bin/Signal explain Release/signal_explain" prefix_auto="1" extension_auto="1" />
@@ -146,6 +150,8 @@
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
+					<Add directory="../libcop2k/bin/Release" />
+					<Add directory="../libopcode/bin/Release" />
 				</Linker>
 			</Target>
 		</Build>

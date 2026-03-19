@@ -20,7 +20,9 @@ namespace COP2K
         virtual void func(CLI &, const std::vector<std::string> &) = 0;
     };
 
-    struct CLI {
+    class CLI {
+    public:
+
         CLI() : request_quit(false) {}
 
         void cli_get_cmd()

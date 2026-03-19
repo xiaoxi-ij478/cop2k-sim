@@ -13,10 +13,12 @@ namespace COP2K
 {
     class DIS
     {
-        // NOTE: this decompiler will aggressively treat everything as code
-        // rather than as data
+        /* NOTE: this decompiler will aggressively treat everything as code
+         * rather than as data
+         * it is not going to be another IDA
+         */
         public:
-            std::string disassemble(std::istream &in) const
+            std::string disassemble(const std::string &instr_byte) const
             {
                 struct Line {
                     std::string mnemonic;
@@ -28,12 +30,11 @@ namespace COP2K
                     bool dst_is_memaddr;
                     unsigned char dst_memaddr;
                 };
+                std::istringstream in(instr_byte);
                 std::ostringstream oss;
                 std::map<unsigned char, struct Line> lines;
                 unsigned label_count = 0;
                 unsigned cur_pos;
-
-
 
                 while ((cur_pos = in.tellg()) < 256) {
                     bool src_is_memaddr = false, dst_is_memaddr = false;
@@ -41,16 +42,19 @@ namespace COP2K
                     const Opcode::Instruction *ins = nullptr;
                     unsigned char byte = in.get();
                     unsigned char tmpbyte = 0;
-                    std::string ins_operand, b(std::format("{:02X}H", byte));
+                    std::string ins_operand, b(std::format("{:02X}", byte));
 
-                    if (!byte) // do not put so many _FATCH_es
+                    if (!byte) // do not put NULL byte
                         continue;
 
                     try {
                         ins = &opcode.get_from_byte(byte & ~0x3);
 
-                        if (ins.mnemonic == "_FATCH_")
-                            throw std::out_of_range();
+                        if (ins->mnemonic == "_FATCH_")
+                            /* we do not output _FATCH_ even if it was
+                             * manually assembled
+                             */
+                            throw std::out_of_range("");
 
                     } catch (const std::out_of_range &) {
                         lines.emplace(
@@ -79,13 +83,13 @@ namespace COP2K
 
                         case Operand::IMMED:
                             ins_operand.append(std::format("#{:02X}H", (tmpbyte = in.get())));
-                            b.append(std::format("{:02X}H", tmpbyte));
+                            b.append(std::format(" {:02X}", tmpbyte));
                             break;
 
                         case Operand::MEMADDR:
                             src_is_memaddr = true;
                             src_memaddr = in.get();
-                            b.append(std::format("{:02X}H", src_memaddr));
+                            b.append(std::format(" {:02X}", src_memaddr));
                             break;
 
                         case Operand::REG:
@@ -107,14 +111,14 @@ namespace COP2K
 
                         case Operand::IMMED:
                             ins_operand.append(std::format(", #{:02X}H", (tmpbyte = in.get())));
-                            b.append(std::format("{:02X}H", tmpbyte));
+                            b.append(std::format(" {:02X}", tmpbyte));
                             break;
 
                         case Operand::MEMADDR:
                             dst_is_memaddr = true;
                             dst_memaddr = in.get();
                             ins_operand.append(", ");
-                            b.append(std::format("{:02X}H", dst_memaddr));
+                            b.append(std::format(" {:02X}", dst_memaddr));
                             break;
 
                         case Operand::REG:
@@ -132,6 +136,7 @@ namespace COP2K
                             ins->mnemonic,
                             std::move(ins_operand),
                             std::string(),
+                            std::move(b),
                             src_is_memaddr,
                             src_memaddr,
                             dst_is_memaddr,
@@ -151,7 +156,7 @@ namespace COP2K
                             i.second.operand.insert(0, label);
 
                         } catch (const std::out_of_range &) {
-                            i.second.operand.insert(0, std::format("{:02X}", i.second.src_memaddr));
+                            i.second.operand.insert(0, std::format("{:02X}H", i.second.src_memaddr));
                         }
                     }
 
@@ -165,7 +170,7 @@ namespace COP2K
                             i.second.operand.append(label);
 
                         } catch (const std::out_of_range &) {
-                            i.second.operand.append(std::format("{:02X}", i.second.dst_memaddr));
+                            i.second.operand.append(std::format("{:02X}H", i.second.dst_memaddr));
                         }
                     }
                 }
@@ -174,7 +179,7 @@ namespace COP2K
                     if (!i.second.label.empty())
                         oss << i.second.label << ':' << std::endl;
 
-                    oss << "  " << i.second.mnemonic << ' ' << i.second.operand << std::endl;
+                    oss << "    " << i.second.mnemonic << ' ' << i.second.operand << "    ; " << i.second.byte << std::endl;
                 }
 
                 return oss.str();

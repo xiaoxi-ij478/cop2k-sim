@@ -13,7 +13,7 @@
 
 // we can't use fancy classes in Yacc's structs
 struct InstructionOperand {
-    COP2K::Operand src_type, dst_type;
+    COP2K::OperandType src_type, dst_type;
     /*
      * for R?, R<arg>;
      * for @R? == R?;
@@ -102,14 +102,14 @@ namespace COP2K
                                                      );
 
                     if (
-                        operand.src_type == Operand::REG ||
-                        operand.src_type == Operand::REGADDR
+                        operand.src_type == OperandType::REG ||
+                        operand.src_type == OperandType::REGADDR
                     )
                         PUT_BYTE(ins.byte | operand.src);
 
                     else if (
-                        operand.dst_type == Operand::REG ||
-                        operand.dst_type == Operand::REGADDR
+                        operand.dst_type == OperandType::REG ||
+                        operand.dst_type == OperandType::REGADDR
                     )
                         PUT_BYTE(ins.byte | operand.dst);
 
@@ -117,27 +117,27 @@ namespace COP2K
                         PUT_BYTE(ins.byte);
 
                     switch (operand.src_type) {
-                        case Operand::NONE:
-                        case Operand::REG_A:
-                        case Operand::REG:
-                        case Operand::REGADDR:
+                        case OperandType::NONE:
+                        case OperandType::REG_A:
+                        case OperandType::REG:
+                        case OperandType::REGADDR:
                             break;
 
-                        case Operand::IMMED:
-                        case Operand::MEMADDR:
+                        case OperandType::IMMED:
+                        case OperandType::MEMADDR:
                             PUT_BYTE(operand.src);
                             break;
                     }
 
                     switch (operand.dst_type) {
-                        case Operand::NONE:
-                        case Operand::REG_A:
-                        case Operand::REG:
-                        case Operand::REGADDR:
+                        case OperandType::NONE:
+                        case OperandType::REG_A:
+                        case OperandType::REG:
+                        case OperandType::REGADDR:
                             break;
 
-                        case Operand::IMMED:
-                        case Operand::MEMADDR:
+                        case OperandType::IMMED:
+                        case OperandType::MEMADDR:
                             PUT_BYTE(operand.dst);
                             break;
                     }

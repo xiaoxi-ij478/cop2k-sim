@@ -14,7 +14,7 @@
 
 namespace COP2K
 {
-    enum class Operand : unsigned char {
+    enum class OperandType : unsigned char {
         NONE,
         REG_A,
         REG,
@@ -34,15 +34,15 @@ namespace COP2K
                 unsigned char byte;
                 std::string mnemonic;
                 std::string desc;
-                Operand src, dst;
+                OperandType src, dst;
                 unsigned char signal_count;
                 std::array<std::bitset<24>, 4> microprogram;
 
                 constexpr Instruction() :
                     exist(false),
                     byte(0),
-                    src(Operand::NONE),
-                    dst(Operand::NONE),
+                    src(OperandType::NONE),
+                    dst(OperandType::NONE),
                     signal_count(0)
                 {
                     for (std::bitset<24> &i : microprogram)
@@ -55,7 +55,7 @@ namespace COP2K
                     byte = 0;
                     mnemonic.clear();
                     desc.clear();
-                    src = dst = Operand::NONE;
+                    src = dst = OperandType::NONE;
                     signal_count = 0;
 
                     for (std::bitset<24> &i : microprogram)
@@ -75,8 +75,8 @@ namespace COP2K
                 unsigned char byte,
                 const std::string &mnemonic_raw,
                 const std::string &desc,
-                Operand src,
-                Operand dst,
+                OperandType src,
+                OperandType dst,
                 const std::array<std::bitset<24>, 4> &microprogram
             )
             {
@@ -120,12 +120,12 @@ namespace COP2K
 
                 if (!instructions.at(0x0 >> 2).exist)
                     throw std::logic_error(
-                        "instruction @ 0x0 MUST be _FATCH_ with no operands"
+                        "instruction @ 0x0 MUST be _FATCH_"
                     );
 
                 if (!instructions.at(0xB8 >> 2).exist)
                     throw std::logic_error(
-                        "instruction @ 0xB8 MUST be _INT_ with no operands"
+                        "instruction @ 0xB8 MUST be _INT_"
                     );
             }
 
@@ -137,8 +137,8 @@ namespace COP2K
 
             constexpr const Instruction &get_from_mnemonic(
                 const std::string &mnemonic,
-                Operand src,
-                Operand dst
+                OperandType src,
+                OperandType dst
             ) const
             {
                 std::string n;
@@ -232,51 +232,51 @@ namespace COP2K
                     oss << i.mnemonic;
 
                     switch (i.src) {
-                        case Operand::NONE:
+                        case OperandType::NONE:
                             break;
 
-                        case Operand::REG_A:
+                        case OperandType::REG_A:
                             oss << " A";
                             break;
 
-                        case Operand::REG:
+                        case OperandType::REG:
                             oss << " R?";
                             break;
 
-                        case Operand::REGADDR:
+                        case OperandType::REGADDR:
                             oss << " @R?";
                             break;
 
-                        case Operand::IMMED:
+                        case OperandType::IMMED:
                             oss << " #II";
                             break;
 
-                        case Operand::MEMADDR:
+                        case OperandType::MEMADDR:
                             oss << " MM";
                             break;
                     }
 
                     switch (i.dst) {
-                        case Operand::NONE:
+                        case OperandType::NONE:
                             break;
 
-                        case Operand::REG_A:
+                        case OperandType::REG_A:
                             oss << ", A";
                             break;
 
-                        case Operand::REG:
+                        case OperandType::REG:
                             oss << ", R?";
                             break;
 
-                        case Operand::REGADDR:
+                        case OperandType::REGADDR:
                             oss << ", @R?";
                             break;
 
-                        case Operand::IMMED:
+                        case OperandType::IMMED:
                             oss << ", #II";
                             break;
 
-                        case Operand::MEMADDR:
+                        case OperandType::MEMADDR:
                             oss << ", MM";
                             break;
                     }

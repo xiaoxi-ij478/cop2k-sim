@@ -969,6 +969,21 @@ namespace COP2K
                 opcode.clear();
             }
 
+            constexpr const DBus &get_dbus() const
+            {
+                return dbus;
+            }
+
+            constexpr const ABus &get_abus() const
+            {
+                return abus;
+            }
+
+            constexpr const IBus &get_ibus() const
+            {
+                return ibus;
+            }
+
             constexpr void load_instruction(FILE *in)
             {
                 opcode.load_instr_txt(in);
@@ -1036,6 +1051,15 @@ namespace COP2K
                 return ret;
             }
 
+            constexpr std::string bus_to_string() const
+            {
+                std::string ret;
+                ret.append(dbus.to_string());
+                ret.append(abus.to_string());
+                ret.append(ibus.to_string());
+                return ret;
+            }
+
             constexpr std::string to_string() const
             {
                 std::string ret("COP2K's status:\n");
@@ -1044,9 +1068,7 @@ namespace COP2K
                 ret.append("Flags:\n");
                 ret.append(flag_to_string());
                 ret.append("Buses:\n");
-                ret.append(dbus.to_string());
-                ret.append(abus.to_string());
-                ret.append(ibus.to_string());
+                ret.append(bus_to_string());
                 ret.append("ALU:\n");
                 ret.append(alu.to_string());
                 ret.append("Memory:\n");
