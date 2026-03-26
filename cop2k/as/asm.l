@@ -58,7 +58,7 @@
     yyasmlval.number_v = strtol(yyasmtext, nullptr, 8);
     return NUMBER;
 }
-[0-9a-f]+h {
+[0-9][0-9a-f]*h {
     yyasmlval.number_v = strtol(yyasmtext, nullptr, 16);
     return NUMBER;
 }
