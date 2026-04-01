@@ -86,7 +86,6 @@ void yyerror(const char *s)
 %right '!' UNNEG UNPOS
 
 %%
-
 program
     : // none
     | program instruction {
@@ -720,7 +719,6 @@ expression
 ;
 
 %%
-
 void COP2K::assemble(FILE *in, AS *as, bool no_eval_val)
 {
     yyasmset_lineno(1);
