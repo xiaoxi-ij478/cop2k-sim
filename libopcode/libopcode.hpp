@@ -38,7 +38,7 @@ namespace COP2K
                 unsigned char signal_count;
                 std::array<std::bitset<24>, 4> microprogram;
 
-                constexpr Instruction() :
+                Instruction() :
                     exist(false),
                     byte(0),
                     src(OperandType::NONE),
@@ -49,7 +49,7 @@ namespace COP2K
                         i.set();
                 }
 
-                constexpr void clear()
+                void clear()
                 {
                     exist = false;
                     byte = 0;
@@ -63,7 +63,7 @@ namespace COP2K
                 }
             };
 
-            constexpr Opcode()
+            Opcode()
             {
                 clear();
             }
@@ -71,7 +71,7 @@ namespace COP2K
             // WARNING:
             // this function won't do sanity check on the arguments,
             // so make sure all arguments are correct!
-            constexpr void add(
+            void add(
                 unsigned char byte,
                 const std::string &mnemonic_raw,
                 const std::string &desc,
@@ -87,7 +87,6 @@ namespace COP2K
 
                 instructions.at(byte >> 2).exist = true;
                 std::string mnemonic;
-
                 std::transform(
                     mnemonic_raw.cbegin(),
                     mnemonic_raw.cend(),
@@ -113,29 +112,25 @@ namespace COP2K
                 // *INDENT-ON*
             }
 
-            constexpr void load_instr_txt(FILE *in)
+            void load_instr_txt(FILE *in)
             {
                 clear();
                 parse_instruction_file(in, this);
 
                 if (!instructions.at(0x0 >> 2).exist)
-                    throw std::logic_error(
-                        "instruction @ 0x0 MUST be _FATCH_"
-                    );
+                    throw std::logic_error("instruction @ 0x0 MUST be _FATCH_");
 
                 if (!instructions.at(0xB8 >> 2).exist)
-                    throw std::logic_error(
-                        "instruction @ 0xB8 MUST be _INT_"
-                    );
+                    throw std::logic_error("instruction @ 0xB8 MUST be _INT_");
             }
 
-            constexpr void clear()
+            void clear()
             {
                 for (Instruction &i : instructions)
                     i.clear();
             }
 
-            constexpr const Instruction &get_from_mnemonic(
+            const Instruction &get_from_mnemonic(
                 const std::string &mnemonic,
                 OperandType src,
                 OperandType dst
@@ -158,7 +153,7 @@ namespace COP2K
                 );
             }
 
-            constexpr const Instruction &get_from_byte(unsigned char byte) const
+            const Instruction &get_from_byte(unsigned char byte) const
             {
                 for (const Instruction &i : instructions)
                     if (i.exist && i.byte == byte)
@@ -169,7 +164,7 @@ namespace COP2K
                 );
             }
 
-            constexpr void patch_um(uint8_t addr, const std::bitset<24> &val)
+            void patch_um(uint8_t addr, const std::bitset<24> &val)
             {
                 Instruction &ins = instructions.at(addr >> 2);
 
@@ -190,7 +185,7 @@ namespace COP2K
                 }
             }
 
-            constexpr void patch_um(uint8_t addr, unsigned bit_pos, bool val)
+            void patch_um(uint8_t addr, unsigned bit_pos, bool val)
             {
                 Instruction &ins = instructions.at(addr >> 2);
 
@@ -211,12 +206,12 @@ namespace COP2K
                 }
             }
 
-            constexpr std::array<Instruction, 64>::const_iterator begin() const
+            std::array<Instruction, 64>::const_iterator begin() const
             {
                 return instructions.cbegin();
             }
 
-            constexpr std::array<Instruction, 64>::const_iterator end() const
+            std::array<Instruction, 64>::const_iterator end() const
             {
                 return instructions.cend();
             }

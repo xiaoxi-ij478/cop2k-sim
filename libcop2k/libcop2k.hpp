@@ -10,6 +10,7 @@
 #include <tuple>
 #include <vector>
 #include <format>
+#include <variant>
 
 #include "libopcode.hpp"
 
@@ -18,22 +19,22 @@ namespace COP2K
     class Register
     {
         public:
-            constexpr Register(uint8_t val, const std::string &name = std::string()) :
+            Register(uint8_t val, const std::string &name = std::string()) :
                 name(name),
                 val(val)
             {}
 
-            constexpr uint8_t get() const
+            uint8_t get() const
             {
                 return val;
             }
 
-            constexpr void set(uint8_t val_)
+            void set(uint8_t val_)
             {
                 val = val_;
             }
 
-            constexpr std::string to_string() const
+            std::string to_string() const
             {
                 return std::format("\"{}\"'s value: 0x{:02X}\n", name, get());
             }
@@ -53,7 +54,7 @@ namespace COP2K
                 callback([](RegisterWithCallback &) {})
             {}
 
-            constexpr uint8_t get() const
+            uint8_t get() const
             {
                 return val;
             }
@@ -74,7 +75,7 @@ namespace COP2K
                 callback = [](RegisterWithCallback &) {};
             }
 
-            constexpr std::string to_string() const
+            std::string to_string() const
             {
                 return std::format("\"{}\"'s value: 0x{:02X}\n", name, get());
             }
@@ -93,27 +94,27 @@ namespace COP2K
                 val(val)
             {}
 
-            constexpr bool get() const
+            bool get() const
             {
                 return val;
             }
 
-            constexpr void pos()
+            void pos()
             {
                 val = true;
             }
 
-            constexpr void neg()
+            void neg()
             {
                 val = false;
             }
 
-            constexpr void set(bool val_)
+            void set(bool val_)
             {
                 val = val_;
             }
 
-            constexpr std::string to_string() const
+            std::string to_string() const
             {
                 return std::format("\"{}\"'s flag value: {}\n", name, get());
             }
@@ -132,7 +133,7 @@ namespace COP2K
                      val(val)
             {}
 
-            constexpr bool get() const
+            bool get() const
             {
                 return val;
             }
@@ -165,7 +166,7 @@ namespace COP2K
                 callback = [](FlagWithCallback &) {};
             }
 
-            constexpr std::string to_string() const
+            std::string to_string() const
             {
                 return std::format("\"{}\"'s flag value: {}\n", name, get());
             }
@@ -193,25 +194,25 @@ namespace COP2K
                 DIRECT_A
             };
 
-            constexpr ALU() :
+            ALU() :
                 cy(false, "Cy IN"),
                 cn(false, "CN"),
                 z(false, "Z"),
                 fen(false, "FEN")
             {}
 
-            constexpr void set_calc_type(CalcTypes val)
+            void set_calc_type(CalcTypes val)
             {
                 calc_type = val;
             }
 
-            constexpr CalcTypes get_calc_type() const
+            CalcTypes get_calc_type() const
             {
                 return calc_type;
             }
 
             // left, direct, right
-            constexpr std::tuple<uint8_t, uint8_t, uint8_t> calc(uint8_t A, uint8_t W)
+            std::tuple<uint8_t, uint8_t, uint8_t> calc(uint8_t A, uint8_t W)
             {
                 int result = 0; // must use `int` to test overflow
 
@@ -261,7 +262,7 @@ namespace COP2K
                        );
             }
 
-            constexpr std::string to_string() const
+            std::string to_string() const
             {
                 const char *calc_type_str = nullptr;
 
@@ -328,27 +329,27 @@ namespace COP2K
     class Bus
     {
         public:
-            constexpr bool has_writer() const
+            bool has_writer() const
             {
                 return writer != WriterType::NONE;
             }
 
-            constexpr bool has_reader() const
+            bool has_reader() const
             {
                 return !reader.empty();
             }
 
-            constexpr WriterType get_writer() const
+            WriterType get_writer() const
             {
                 return writer;
             }
 
-            constexpr const std::vector<ReaderType> &get_reader() const
+            const std::vector<ReaderType> &get_reader() const
             {
                 return reader;
             }
 
-            constexpr void set_writer(WriterType val)
+            void set_writer(WriterType val)
             {
                 if (has_writer())
                     throw std::logic_error("this bus already has a writer");
@@ -356,22 +357,22 @@ namespace COP2K
                 writer = val;
             }
 
-            constexpr void add_reader(ReaderType val)
+            void add_reader(ReaderType val)
             {
                 reader.push_back(val);
             }
 
-            constexpr void clear_writer()
+            void clear_writer()
             {
                 writer = WriterType::NONE;
             }
 
-            constexpr void clear_reader()
+            void clear_reader()
             {
                 reader.clear();
             }
 
-            constexpr uint8_t get_data() const
+            uint8_t get_data() const
             {
                 if (!has_writer())
                     throw std::logic_error("this bus has no writer");
@@ -379,7 +380,7 @@ namespace COP2K
                 return data;
             }
 
-            constexpr void set_data(uint8_t val)
+            void set_data(uint8_t val)
             {
                 if (!has_writer())
                     throw std::logic_error("this bus has no writer");
@@ -387,7 +388,7 @@ namespace COP2K
                 data = val;
             }
 
-            virtual constexpr std::string to_string() const = 0;
+            virtual std::string to_string() const = 0;
 
         private:
             std::vector<ReaderType> reader;
@@ -421,7 +422,7 @@ namespace COP2K
     class DBus : public Bus<DBusReaderType, DBusWriterType>
     {
         public:
-            constexpr std::string to_string() const override
+            std::string to_string() const override
             {
                 std::string reader_str;
                 const char *writer_str = nullptr;
@@ -529,7 +530,7 @@ namespace COP2K
     class ABus : public Bus<ABusReaderType, ABusWriterType>
     {
         public:
-            constexpr std::string to_string() const override
+            std::string to_string() const override
             {
                 std::string reader_str;
                 const char *writer_str = nullptr;
@@ -578,7 +579,7 @@ namespace COP2K
     class IBus : public Bus<IBusReaderType, IBusWriterType>
     {
         public:
-            constexpr std::string to_string() const override
+            std::string to_string() const override
             {
                 std::string reader_str;
                 const char *writer_str = nullptr;
@@ -620,27 +621,27 @@ namespace COP2K
     class Memory
     {
         public:
-            constexpr void set_addr(uint8_t val)
+            void set_addr(uint8_t val)
             {
                 addr = val;
             }
 
-            constexpr void set_data(uint8_t val)
+            void set_data(uint8_t val)
             {
                 mem.at(addr) = val;
             }
 
-            constexpr uint8_t get_addr() const
+            uint8_t get_addr() const
             {
                 return addr;
             }
 
-            constexpr uint8_t get_data() const
+            uint8_t get_data() const
             {
                 return mem.at(addr);
             }
 
-            constexpr void clear()
+            void clear()
             {
                 for (unsigned i = 0; i < 256; i++)
                     set_data_at(i, 0);
@@ -649,17 +650,17 @@ namespace COP2K
             }
 
             // bypass normal addr lookup mode
-            constexpr void set_data_at(uint8_t actaddr, uint8_t val)
+            void set_data_at(uint8_t actaddr, uint8_t val)
             {
                 mem.at(actaddr) = val;
             }
 
-            constexpr uint8_t get_data_at(uint8_t actaddr) const
+            uint8_t get_data_at(uint8_t actaddr) const
             {
                 return mem.at(actaddr);
             }
 
-            constexpr std::string dump_content() const
+            std::string dump_content() const
             {
                 std::string ret;
 
@@ -669,7 +670,7 @@ namespace COP2K
                 return ret;
             }
 
-            constexpr std::string to_string() const
+            std::string to_string() const
             {
                 std::string ret("Memory status:");
 
@@ -692,27 +693,27 @@ namespace COP2K
     class MicroProgramMemory
     {
         public:
-            constexpr void set_addr(uint8_t val)
+            void set_addr(uint8_t val)
             {
                 addr = val;
             }
 
-            constexpr void set_data(const std::bitset<24> &val)
+            void set_data(const std::bitset<24> &val)
             {
                 mem.at(addr) = val;
             }
 
-            constexpr uint8_t get_addr() const
+            uint8_t get_addr() const
             {
                 return addr;
             }
 
-            constexpr const std::bitset<24> &get_data() const
+            const std::bitset<24> &get_data() const
             {
                 return mem.at(addr);
             }
 
-            constexpr void clear()
+            void clear()
             {
                 std::bitset<24> all_on;
                 all_on.set();
@@ -724,22 +725,22 @@ namespace COP2K
             }
 
             // bypass normal addr lookup mode
-            constexpr void set_data_at(uint8_t actaddr, const std::bitset<24> &val)
+            void set_data_at(uint8_t actaddr, const std::bitset<24> &val)
             {
                 mem.at(actaddr) = val;
             }
 
-            constexpr void set_data_at(uint8_t actaddr, unsigned bit_pos, bool val)
+            void set_data_at(uint8_t actaddr, unsigned bit_pos, bool val)
             {
                 mem.at(actaddr).set(bit_pos, val);
             }
 
-            constexpr const std::bitset<24> &get_data_at(uint8_t actaddr) const
+            const std::bitset<24> &get_data_at(uint8_t actaddr) const
             {
                 return mem.at(actaddr);
             }
 
-            constexpr std::string dump_content() const
+            std::string dump_content() const
             {
                 std::string ret;
 
@@ -753,7 +754,7 @@ namespace COP2K
                 return ret;
             }
 
-            constexpr std::string to_string() const
+            std::string to_string() const
             {
                 std::string ret("Micro program memory status:");
 
@@ -773,10 +774,26 @@ namespace COP2K
             uint8_t addr;
     };
 
+    enum class COP2KCallbackType {
+
+    };
+
+
+    using COP2KCallbackArg =
+        std::variant <
+        DBusReaderType, DBusWriterType, // dbus io
+        IBusReaderType, IBusWriterType, // ibus io
+        ABusReaderType, ABusWriterType, // abus io
+        uint8_t,// em/um i
+        std::pair<uint8_t, uint8_t>, // em o
+        std::pair<uint8_t, std::bitset<24>>, // um o
+        >;
+
+
     class COP2K
     {
         public:
-            COP2K() :
+            COP2K(std::function<void(COP2K &, COP2KCallbackType)> callback) :
                 l(0, "L"),
                 d(0, "D"),
                 r(0, "R"),
@@ -844,20 +861,20 @@ namespace COP2K
                 pos_cn();
             }
 
-            constexpr void run_forever()
+            void run_forever()
             {
                 while (!halt.get())
                     run_clock();
             }
 
-            constexpr void run_clock()
+            void run_clock()
             {
                 get_control_signal();
                 set_bus_status();
                 modify_bus_data();
             }
 
-            constexpr void run_instruction()
+            void run_instruction()
             {
                 // NOTE: we assume user has loaded opcode
                 unsigned char clock_count = opcode.get_from_byte(upc.get()).signal_count;
@@ -866,125 +883,125 @@ namespace COP2K
                     run_clock();
             }
 
-            constexpr void trigger_interrupt()
+            void trigger_interrupt()
             {
                 ireq.pos();
             }
 
-            constexpr void pos_fen()
+            void pos_fen()
             {
                 alu.fen.pos();
             }
 
-            constexpr void pos_cn()
+            void pos_cn()
             {
                 alu.cn.pos();
             }
 
-            constexpr void pos_cy()
+            void pos_cy()
             {
                 alu.cy.pos();
             }
 
-            constexpr void neg_fen()
+            void neg_fen()
             {
                 alu.fen.neg();
             }
 
-            constexpr void neg_cn()
+            void neg_cn()
             {
                 alu.cn.neg();
             }
 
-            constexpr void neg_cy()
+            void neg_cy()
             {
                 alu.cy.neg();
             }
 
-            constexpr void set_fen(bool val)
+            void set_fen(bool val)
             {
                 alu.fen.set(val);
             }
 
-            constexpr void set_cn(bool val)
+            void set_cn(bool val)
             {
                 alu.cn.set(val);
             }
 
-            constexpr void set_cy(bool val)
+            void set_cy(bool val)
             {
                 alu.cy.set(val);
             }
 
-            constexpr bool get_fen() const
+            bool get_fen() const
             {
                 return alu.fen.get();
             }
 
-            constexpr bool get_cn() const
+            bool get_cn() const
             {
                 return alu.cn.get();
             }
 
-            constexpr bool get_cy() const
+            bool get_cy() const
             {
                 return alu.cy.get();
             }
 
-            constexpr uint8_t get_em_data(uint8_t addr) const
+            uint8_t get_em_data(uint8_t addr) const
             {
                 return em.get_data_at(addr);
             }
 
-            constexpr void set_em_data(uint8_t addr, uint8_t val)
+            void set_em_data(uint8_t addr, uint8_t val)
             {
                 em.set_data_at(addr, val);
             }
 
-            constexpr void clear_em()
+            void clear_em()
             {
                 em.clear();
             }
 
-            constexpr const std::bitset<24> &get_um_data(uint8_t addr) const
+            const std::bitset<24> &get_um_data(uint8_t addr) const
             {
                 return um.get_data_at(addr);
             }
 
-            constexpr void set_um_data(uint8_t addr, const std::bitset<24> &val)
+            void set_um_data(uint8_t addr, const std::bitset<24> &val)
             {
                 um.set_data_at(addr, val);
                 opcode.patch_um(addr, val);
             }
 
-            constexpr void set_um_data(uint8_t addr, unsigned bit_pos, bool val)
+            void set_um_data(uint8_t addr, unsigned bit_pos, bool val)
             {
                 um.set_data_at(addr, bit_pos, val);
                 opcode.patch_um(addr, bit_pos, val);
             }
 
-            constexpr void clear_um()
+            void clear_um()
             {
                 um.clear();
                 opcode.clear();
             }
 
-            constexpr const DBus &get_dbus() const
+            const DBus &get_dbus() const
             {
                 return dbus;
             }
 
-            constexpr const ABus &get_abus() const
+            const ABus &get_abus() const
             {
                 return abus;
             }
 
-            constexpr const IBus &get_ibus() const
+            const IBus &get_ibus() const
             {
                 return ibus;
             }
 
-            constexpr void load_instruction(FILE *in)
+            void load_instruction(FILE *in)
             {
                 opcode.load_instr_txt(in);
 
@@ -993,7 +1010,7 @@ namespace COP2K
                         um.set_data_at(i.byte | j, i.microprogram.at(j));
             }
 
-            constexpr std::string reg_to_string() const
+            std::string reg_to_string() const
             {
                 std::string ret;
                 ret.append(l.to_string());
@@ -1017,7 +1034,7 @@ namespace COP2K
                 return ret;
             }
 
-            constexpr std::string flag_to_string() const
+            std::string flag_to_string() const
             {
                 std::string ret;
                 ret.append(manual_dbus.to_string());
@@ -1051,7 +1068,7 @@ namespace COP2K
                 return ret;
             }
 
-            constexpr std::string bus_to_string() const
+            std::string bus_to_string() const
             {
                 std::string ret;
                 ret.append(dbus.to_string());
@@ -1060,7 +1077,7 @@ namespace COP2K
                 return ret;
             }
 
-            constexpr std::string to_string() const
+            std::string to_string() const
             {
                 std::string ret("COP2K's status:\n");
                 ret.append("Registers:\n");
@@ -1124,9 +1141,10 @@ namespace COP2K
             Flag x2, x1, x0;
             Flag wen, aen;
             FlagWithCallback s2, s1, s0;
+            std::function<void(COP2K &, COP2KCallbackType)> callback;
 
         private:
-            constexpr void update_alu()
+            void update_alu()
             {
                 // note: must be careful not to cause another callback to
                 // call cthis function
@@ -1140,7 +1158,7 @@ namespace COP2K
                 r.set(_r);
             }
 
-            constexpr void get_control_signal()
+            void get_control_signal()
             {
                 // get control signal if running automatically
                 if (running_manually.get())
@@ -1172,7 +1190,7 @@ namespace COP2K
                 emwr.set(microprogram.test(22));
             }
 
-            constexpr void set_bus_status()
+            void set_bus_status()
             {
                 dbus.clear_reader();
                 dbus.clear_writer();
@@ -1279,7 +1297,7 @@ namespace COP2K
                 }
             }
 
-            constexpr void modify_bus_data()
+            void modify_bus_data()
             {
                 switch (abus.get_writer()) {
                     case ABusWriterType::NONE:

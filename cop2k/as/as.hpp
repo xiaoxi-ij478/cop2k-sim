@@ -34,7 +34,7 @@ namespace COP2K
         public:
             AS() : overflow(false) {}
 
-            constexpr void assemble_file(FILE *in)
+            void assemble_file(FILE *in)
             {
                 // we use two-pass mode to scan for any label / constants
                 consts.clear();
@@ -45,7 +45,7 @@ namespace COP2K
                 assemble(in, this, false);
             }
 
-            constexpr void clear()
+            void clear()
             {
                 consts.clear();
                 em.clear();
@@ -53,7 +53,7 @@ namespace COP2K
                 overflow=false;
             }
 
-            constexpr void add_instruction(
+            void add_instruction(
                 const std::string &mnemonic,
                 const std::string &label,
                 const struct InstructionOperand &operand,

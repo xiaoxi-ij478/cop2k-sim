@@ -13,6 +13,7 @@
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-ggdb3" />
+					<Add directory="./" />
 				</Compiler>
 				<Linker>
 					<Add directory="../libcop2k/bin/Debug" />
@@ -26,6 +27,7 @@
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-O2" />
+					<Add directory="./" />
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
@@ -40,6 +42,7 @@
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-ggdb3" />
+					<Add directory="./" />
 				</Compiler>
 				<Linker>
 					<Add directory="../libcop2k/bin/Debug" />
@@ -51,6 +54,9 @@
 				<Option object_output="obj/VM Release/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
+				<Compiler>
+					<Add directory="./" />
+				</Compiler>
 				<Linker>
 					<Add directory="../libcop2k/bin/Release" />
 					<Add directory="../libopcode/bin/Release" />
@@ -65,6 +71,7 @@
 				<Compiler>
 					<Add option="-ggdb3" />
 					<Add option="-DYYDEBUG" />
+					<Add directory="./" />
 				</Compiler>
 				<Linker>
 					<Add directory="../libcop2k/bin/Debug" />
@@ -78,6 +85,7 @@
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-O2" />
+					<Add directory="./" />
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
@@ -93,6 +101,7 @@
 				<Option parameters="/home/xiaoxi/Public/COP2000/INST.INS" />
 				<Compiler>
 					<Add option="-ggdb3" />
+					<Add directory="./" />
 				</Compiler>
 				<Linker>
 					<Add directory="../libcop2k/bin/Debug" />
@@ -107,6 +116,7 @@
 				<Option parameters="preset_instruction_set/inst.txt ex5.bin" />
 				<Compiler>
 					<Add option="-ggdb3" />
+					<Add directory="./" />
 				</Compiler>
 				<Linker>
 					<Add directory="../libcop2k/bin/Debug" />
@@ -120,6 +130,7 @@
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-O2" />
+					<Add directory="./" />
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
@@ -134,6 +145,7 @@
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-ggdb3" />
+					<Add directory="./" />
 				</Compiler>
 				<Linker>
 					<Add directory="../libcop2k/bin/Debug" />
@@ -147,6 +159,7 @@
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-O2" />
+					<Add directory="./" />
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
@@ -213,6 +226,10 @@
 			<Option target="Signal explain Release" />
 		</Unit>
 		<Unit filename="vm/vm.cpp">
+			<Option target="VM Debug" />
+			<Option target="VM Release" />
+		</Unit>
+		<Unit filename="vm/vm.hpp">
 			<Option target="VM Debug" />
 			<Option target="VM Release" />
 		</Unit>
